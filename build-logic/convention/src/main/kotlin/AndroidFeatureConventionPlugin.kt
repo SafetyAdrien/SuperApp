@@ -30,6 +30,12 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", libs.findLibrary("androidx-navigation-compose").get())
                 add("implementation", libs.findLibrary("androidx-hilt-navigation-compose").get())
                 add("implementation", libs.findLibrary("kotlinx-coroutines-android").get())
+                // Screens since Phase 1 (feature:create's StickyNote2/Draw/Groups, feature:home/
+                // spaces' AutoMirrored Article/Message, Phase 4's block-type icons) use icons
+                // outside the small curated `material-icons-core` set. core:designsystem depends
+                // on the extended set for its own components but only as `implementation`, so it
+                // doesn't leak here transitively — every feature needs its own icon access anyway.
+                add("implementation", libs.findLibrary("androidx-compose-material-icons-extended").get())
             }
         }
     }

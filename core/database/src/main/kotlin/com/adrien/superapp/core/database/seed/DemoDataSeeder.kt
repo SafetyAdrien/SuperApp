@@ -1,14 +1,17 @@
 package com.adrien.superapp.core.database.seed
 
+import com.adrien.superapp.core.database.dao.BlockDao
 import com.adrien.superapp.core.database.dao.PageDao
 import com.adrien.superapp.core.database.dao.PostDao
 import com.adrien.superapp.core.database.dao.ProfileDao
 import com.adrien.superapp.core.database.dao.SpaceDao
+import com.adrien.superapp.core.database.entity.BlockEntity
 import com.adrien.superapp.core.database.entity.PageEntity
 import com.adrien.superapp.core.database.entity.PostEntity
 import com.adrien.superapp.core.database.entity.ProfileEntity
 import com.adrien.superapp.core.database.entity.SpaceEntity
 import com.adrien.superapp.core.database.entity.SpaceMemberEntity
+import com.adrien.superapp.core.model.BlockType
 import com.adrien.superapp.core.model.PostVisibility
 import com.adrien.superapp.core.model.SpaceMemberRole
 import com.adrien.superapp.core.model.SpaceVisibility
@@ -27,6 +30,7 @@ class DemoDataSeeder @Inject constructor(
     private val postDao: PostDao,
     private val spaceDao: SpaceDao,
     private val pageDao: PageDao,
+    private val blockDao: BlockDao,
 ) {
     suspend fun seedIfEmpty() {
         if (profileDao.count() > 0) return
@@ -115,5 +119,47 @@ class DemoDataSeeder @Inject constructor(
             }
         }
         pageDao.insertAll(pageEntities)
+
+        val blockEntities = pageEntities.flatMap { page ->
+            listOf(
+                BlockEntity(
+                    id = UUID.randomUUID().toString(),
+                    pageId = page.id,
+                    parentBlockId = null,
+                    type = BlockType.HEADING_1.name,
+                    position = 1000L,
+                    content = page.title,
+                    checked = false,
+                    language = null,
+                    createdAt = page.createdAt,
+                    updatedAt = page.createdAt,
+                ),
+                BlockEntity(
+                    id = UUID.randomUUID().toString(),
+                    pageId = page.id,
+                    parentBlockId = null,
+                    type = BlockType.PARAGRAPH.name,
+                    position = 2000L,
+                    content = "Cette page est un exemple — modifiez-la ou ajoutez un bloc depuis \"Ajouter un bloc\".",
+                    checked = false,
+                    language = null,
+                    createdAt = page.createdAt,
+                    updatedAt = page.createdAt,
+                ),
+                BlockEntity(
+                    id = UUID.randomUUID().toString(),
+                    pageId = page.id,
+                    parentBlockId = null,
+                    type = BlockType.CHECKLIST.name,
+                    position = 3000L,
+                    content = "Essayer de cocher cette case",
+                    checked = false,
+                    language = null,
+                    createdAt = page.createdAt,
+                    updatedAt = page.createdAt,
+                ),
+            )
+        }
+        blockDao.insertAll(blockEntities)
     }
 }

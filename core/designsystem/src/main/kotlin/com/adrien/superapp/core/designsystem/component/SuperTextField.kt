@@ -7,6 +7,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import com.adrien.superapp.core.designsystem.theme.SuperAppShapes
 import com.adrien.superapp.core.designsystem.theme.SuperAppTheme
@@ -23,6 +24,7 @@ fun SuperTextField(
     supportingText: String? = null,
     singleLine: Boolean = false,
     minLines: Int = 1,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
 ) {
     OutlinedTextField(
         value = value,
@@ -37,7 +39,7 @@ fun SuperTextField(
         placeholder = placeholder?.let { { Text(text = it) } },
         supportingText = supportingText?.let { { Text(text = it) } },
         colors = OutlinedTextFieldDefaults.colors(),
-        textStyle = MaterialTheme.typography.bodyLarge,
+        textStyle = textStyle,
     )
 }
 

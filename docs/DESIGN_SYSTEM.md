@@ -80,4 +80,10 @@ plain Material 3 `TabRow`/`Tab` and Settings uses plain `RadioButton`/
 isn't worth it until a second caller shows up. Phase 3's
 `CreateSpaceScreen` reuses the same plain-`RadioButton` pattern for its
 visibility picker — a second caller, still not enough on its own to justify
-extending `SuperSegmentedControl` off the backlog.
+extending `SuperSegmentedControl` off the backlog. Phase 4's block editor
+reuses plain Material3 `DropdownMenu`/`DropdownMenuItem` for each block's
+action menu (`SuperContextMenu` isn't built yet either) and extended
+`SuperTextField` with an optional `textStyle` parameter (default unchanged:
+`MaterialTheme.typography.bodyLarge`) so headings/code blocks can render at
+their own type scale through the same component instead of a one-off
+`BasicTextField`.

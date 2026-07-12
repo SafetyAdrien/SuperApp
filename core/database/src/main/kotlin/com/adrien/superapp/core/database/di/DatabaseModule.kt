@@ -3,6 +3,7 @@ package com.adrien.superapp.core.database.di
 import android.content.Context
 import androidx.room.Room
 import com.adrien.superapp.core.database.SuperAppDatabase
+import com.adrien.superapp.core.database.dao.BlockDao
 import com.adrien.superapp.core.database.dao.PageDao
 import com.adrien.superapp.core.database.dao.PostDao
 import com.adrien.superapp.core.database.dao.ProfileDao
@@ -40,4 +41,7 @@ object DatabaseModule {
 
     @Provides
     fun providesPageDao(database: SuperAppDatabase): PageDao = database.pageDao()
+
+    @Provides
+    fun providesBlockDao(database: SuperAppDatabase): BlockDao = database.blockDao()
 }

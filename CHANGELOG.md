@@ -5,6 +5,45 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Phase 4: block editor
+
+- `core:model`: `BlockType` (11 of the brief's 15 types; 6 deferred — see
+  `docs/DATA_MODEL.md`), `Block` (`checked`/`language` as concrete fields
+  instead of a generic `properties` map — see `docs/DECISIONS.md`).
+- `core:database`: `BlockEntity`, `BlockDao`, mapper, extended
+  `SuperAppDatabase`/`DatabaseModule`. `BlockRepositoryImpl` computes each
+  new block's position with a gap-based scheme so inserting between two
+  blocks never shifts other rows. `DemoDataSeeder` now seeds 3 blocks per
+  demo page.
+- `core:domain`: `BlockRepository` (+ `MoveDirection`) and six use cases
+  (`ObserveBlocksUseCase`, `CreateBlockUseCase`, `UpdateBlockContentUseCase`,
+  `ToggleBlockCheckedUseCase`, `DeleteBlockUseCase`, `MoveBlockUseCase`).
+- `core:testing`: `FakeBlockRepository` (same gap-based position logic as
+  the real repository).
+- `core:designsystem`: `SuperTextField` gained an optional `textStyle`
+  parameter (default unchanged).
+- Convention plugins: `material-icons-extended` moved from
+  `core:designsystem`-only to the `superapp.android.feature` convention
+  plugin — every feature module gets consistent icon access now, and this
+  retroactively de-risks unconfirmed icon usages from Phase 1–3.
+- `feature:editor`: `PageDetailScreen` now renders a real, editable block
+  list (`BlockRow`, per-type rendering) with a "slash-menu" equivalent
+  bottom sheet (`BlockTypePickerContent`) and a per-block action menu
+  (insert below / move up / move down / delete).
+- New tests: `CreateBlockUseCaseTest`, `MoveBlockUseCaseTest`
+  (core:domain), `BlockDaoTest` (core:database, Robolectric + in-memory
+  Room).
+
+### Known issue (unchanged from Phase 0–3, now also covers Phase 4's code)
+
+- Still not compiled end-to-end in this sandbox — see `PROJECT_STATUS.md`
+  §Blocages. Phase 4 is the riskiest UI code so far: destructuring
+  `items()` + a tuple `key` lambda in `PageDetailScreen.kt`, several
+  `Modifier.weight()` calls across nested `Row`/`Box` scopes in
+  `BlockRow.kt`, and a convention-plugin change
+  (`AndroidFeatureConventionPlugin.kt`) that affects every feature
+  module's classpath, not just `feature:editor`'s.
+
 ### Added — Phase 3: spaces and pages
 
 - `core:model`: `Space`/`SpaceVisibility`, `SpaceMember`/`SpaceMemberRole`,

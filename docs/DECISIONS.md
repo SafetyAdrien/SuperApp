@@ -4,6 +4,82 @@ Short ADRs. Newest first.
 
 ---
 
+## Block position is a gap-based `Long`, not a shifted integer index
+
+**Contexte** — Phase 4's block editor needs to insert a block between any
+two existing blocks (from each block's "Insérer en dessous" action) without
+re-numbering every later block on every insert.
+
+**Décision** — `Block.position` is a `Long`. The first block gets `1000`;
+appending sets `last.position + 1000`; inserting between two blocks sets
+`(before.position + after.position) / 2`. `BlockRepositoryImpl` and
+`FakeBlockRepository` implement this identically so the fakes used in
+`core:domain`'s tests exercise the same logic as the real DB path.
+
+**Raisons** — A shifted-integer-index scheme (`0, 1, 2, ...`) needs an
+update to every row after the insertion point; the gap scheme needs exactly
+one write for an insert and two for a move (swap two positions). Simpler
+and cheaper than a fractional-position library for the scale a single-user
+local demo needs.
+
+**Conséquences** — Repeatedly inserting between the same two blocks halves
+the remaining gap each time; with a `Long` and a starting gap of 1000 this
+takes ~63 inserts-between-the-same-pair before collapsing, which is not
+worth guarding against before a real usage pattern shows it matters.
+
+---
+
+## `Block.checked`/`Block.language` are concrete fields, not the brief's generic `properties` map
+
+**Contexte** — The brief's `Block` entity has a generic `properties` blob
+for type-specific data. Only two of Phase 4's implemented types need extra
+data: `CHECKLIST` (a checked flag) and `CODE` (a language, currently unused
+by any screen).
+
+**Décision** — Add `checked: Boolean` and `language: String?` directly to
+`core:model.Block` and the Room `BlockEntity`, instead of a serialized
+key-value column.
+
+**Raisons** — A generic map needs a `TypeConverter` (JSON serialization) on
+a column this sandbox cannot compile-test; two concrete fields are simpler,
+type-safe, and directly queryable. Two callers isn't enough to justify the
+generic-map machinery — see `docs/DATA_MODEL.md`.
+
+**Conséquences** — Revisit with a real key-value store (or
+`kotlinx.serialization`-backed `TypeConverter`) if a third block type needs
+its own custom property; two hardcoded fields would stop scaling at three.
+
+---
+
+## `material-icons-extended` moved to the `superapp.android.feature` convention plugin
+
+**Contexte** — `core:designsystem` depends on
+`androidx.compose.material:material-icons-extended` as `implementation`
+(needed for its own components), which does not leak to `feature:*` modules
+that also use icons outside the small curated `material-icons-core` set
+(`feature:create`'s `StickyNote2`/`Draw`/`Groups` since Phase 1,
+`feature:home`/`spaces`'s `AutoMirrored.Filled.Article`/`Message` since
+Phase 2/3, and several of Phase 4's block-type icons). None of this has
+ever been compiled, so this was a latent, undetected risk rather than a
+confirmed failure.
+
+**Décision** — Add `material-icons-extended` as an `implementation`
+dependency in `AndroidFeatureConventionPlugin.kt`, so every `:feature:*`
+module gets it automatically.
+
+**Raisons** — Same reasoning `docs/DECISIONS.md` already applies to
+`core:datastore`: a resource nearly every feature screen ends up needing is
+better placed in the shared convention than re-added ad hoc per module each
+time a screen happens to need an icon outside the curated set.
+
+**Conséquences** — Slightly larger method count per feature module (mitigated
+by R8/resource shrinking in release builds, per `superapp.android.application`).
+The first real build should confirm whether any icon used since Phase 1
+was, in fact, only in the extended set — if `assembleDebug` succeeds with no
+"unresolved reference" on an icon, this was a preventive fix, not a live bug.
+
+---
+
 ## Feature modules depend on `core:datastore` directly, not only through `core:domain`
 
 **Contexte** — `ARCHITECTURE.md` documents that `feature:*` modules reach

@@ -67,10 +67,25 @@ subqueries (member count, non-archived page count) into
 `SpaceWithStatsRow` — the same shape as `PostFeedRow`, just without a
 `ProfileEntity` join since a space browser row doesn't need one. `Page` has
 no Room migration story of its own yet because `SuperAppDatabase` is still
-version 1 (see the comment on `SuperAppDatabase`) — Block content (the
-page's actual body) is deliberately not modeled yet, since it belongs to
-whichever phase adds `feature:editor`'s block editor; `Page` today is just
-title/icon/cover metadata plus a `parentPageId` for future nesting that no
-screen navigates into yet (`PageDao.observePagesForSpace` only returns
-top-level pages). Remaining entities (Block, Task, Conversation, Message,
-AppNotification, CanvasDocument, CanvasNode) land with their owning phase.
+version 1 (see the comment on `SuperAppDatabase`) — `Page` is just title/
+icon/cover metadata plus a `parentPageId` for future nesting that no screen
+navigates into yet (`PageDao.observePagesForSpace` only returns top-level
+pages).
+
+Phase 4 added Block, the page body itself: `PARAGRAPH`, `HEADING_1/2/3`,
+`BULLETED_LIST`, `NUMBERED_LIST`, `CHECKLIST`, `QUOTE`, `CALLOUT`,
+`DIVIDER`, `CODE` are implemented; `IMAGE`, `FILE`, `LINK`,
+`TASK_REFERENCE`, `PAGE_REFERENCE`, `CANVAS_REFERENCE` are deferred to the
+phases that add what they'd reference. Two deviations from the brief's
+abstract "properties" blob: `Block.checked` (CHECKLIST) and `Block.language`
+(CODE, unused by any screen yet) are concrete fields on `core:model.Block`
+instead of a generic key-value map — simpler and Room-friendly (no
+`TypeConverter`/JSON column to get right without a compiler), revisit if a
+third block type needs its own custom property. `Block.position` is a `Long`
+with gap-based spacing (new blocks land at `(before + after) / 2`, or
+`last + 1000` at the end) computed in `BlockRepositoryImpl`/
+`FakeBlockRepository` identically, so inserting between two blocks never
+requires shifting every row after it — see `docs/DECISIONS.md`.
+
+Remaining entities (Task, Conversation, Message, AppNotification,
+CanvasDocument, CanvasNode) land with their owning phase.

@@ -1,7 +1,7 @@
 # Project status
 
-Last updated: 2026-07-12 (Phase 0 + Phase 1 + Phase 2 + Phase 3, same
-sandboxed session, build still unverified — see "Blocages").
+Last updated: 2026-07-12 (Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4,
+same sandboxed session, build still unverified — see "Blocages").
 
 ## Fonctionnalités terminées
 
@@ -127,6 +127,54 @@ sandboxed session, build still unverified — see "Blocages").
   `feature:editor`'s actual scope (paragraph/heading/list/checklist/quote/
   callout/code/references, slash menu) is unbuilt.
 
+### Phase 4 — éditeur de blocs
+
+- **`core:model`**: `BlockType` (11 of the brief's 15 types — see
+  `docs/DATA_MODEL.md` for which are deferred and why), `Block`
+  (`checked`/`language` as concrete fields instead of the brief's generic
+  `properties` blob — see `docs/DECISIONS.md`).
+- **`core:database`**: `BlockEntity`, `BlockDao` (`observeBlocksForPage`
+  Flow + a one-shot `listForPage` used to compute insert/move positions),
+  mapper, extended `SuperAppDatabase`/`DatabaseModule` (still schema version
+  1, same reasoning as Phase 3). `BlockRepositoryImpl` computes each new
+  block's `position` with a gap-based scheme (`(before + after) / 2` when
+  inserting between two blocks, `last + 1000` at the end) and moves a block
+  by swapping its position with its neighbor's — see `docs/DECISIONS.md`.
+  `DemoDataSeeder` now seeds 3 blocks per demo page (a `HEADING_1` echoing
+  the page title, a `PARAGRAPH`, and a `CHECKLIST` item) so the editor has
+  something to show immediately.
+- **`core:domain`**: `BlockRepository` (+ `MoveDirection` enum) and six use
+  cases (`ObserveBlocksUseCase`, `CreateBlockUseCase`,
+  `UpdateBlockContentUseCase`, `ToggleBlockCheckedUseCase`,
+  `DeleteBlockUseCase`, `MoveBlockUseCase`).
+- **`core:testing`**: `FakeBlockRepository`, implementing the identical
+  gap-based position logic so `core:domain`'s tests exercise the same
+  behavior as the real DB path.
+- **`core:designsystem`**: `SuperTextField` gained an optional `textStyle`
+  parameter (default unchanged) so block rows can render at each type's
+  own scale (headings larger, code monospace, checked items struck
+  through) through the same component.
+- **Convention plugins**: `material-icons-extended` moved from a
+  `core:designsystem`-only `implementation` dependency to the
+  `superapp.android.feature` convention plugin, so every `:feature:*`
+  module gets consistent icon access — see `docs/DECISIONS.md`. This also
+  retroactively de-risks icon usages from Phase 1–3 that were never
+  actually confirmed to resolve.
+- **`feature:editor`**: `PageDetailScreen` now renders the real block list
+  — `BlockRow` (per-type rendering: paragraph/headings/bulleted &
+  numbered lists with computed prefixes/auto-numbering/checklist with a
+  real `Checkbox`/quote in italics/callout in a tinted `Box`/divider/code
+  in monospace) plus a per-block `DropdownMenu` (insert below / move up /
+  move down / delete) and a bottom "Ajouter un bloc" row. `BlockTypePickerContent`
+  is the "slash menu" equivalent — a `SuperBottomSheet` listing all 11
+  implemented types, mirroring `feature:create`'s "Créer" sheet pattern.
+  `PageDetailViewModel` reconciles the DB's block list (membership/order/
+  type/checked — all set by single atomic actions, safe to sync) while
+  preserving each block's locally-typed `content` so a fast typer's later
+  keystrokes can't be reverted by a slightly-stale DB echo of an earlier
+  one (the same problem the title field already had, solved the same way,
+  documented inline in `PageDetailViewModel.kt`).
+
 ## Fonctionnalités en cours
 
 None open mid-implementation — every phase attempted this session reached a
@@ -154,10 +202,18 @@ documented stopping point.
   in the model and `PageDao.observePagesForSpace` already filters to
   top-level pages only, but no screen creates or navigates into a child
   page. No page icon/cover picker (the fields exist, always null). No
-  archiving/deleting a space or page. The block editor itself — the actual
-  reason `feature:editor` exists — is entirely unbuilt; `PageDetailScreen`
-  only has a title field and an explicit "coming soon" empty state.
-- **Phases 4–11**: exactly as scoped in the project brief. `core:network`,
+  archiving/deleting a space or page.
+- **Rest of Phase 4**: `IMAGE`, `FILE`, `LINK`, `TASK_REFERENCE`,
+  `PAGE_REFERENCE`, `CANVAS_REFERENCE` block types are unbuilt (they need
+  attachments/tasks/canvas/cross-page linking, none of which exist yet).
+  No block nesting (`Block.parentBlockId` exists but nothing writes or
+  reads it — no indentation/nested-list UI). No drag-and-drop reordering —
+  only up/down move actions. No changing an existing block's type after
+  creation (only choosable at insert time). No `language` picker for
+  `CODE` blocks (the field exists, always null). No markdown-style
+  shortcuts (typing `# ` to become a heading, `- ` for a bulleted list,
+  etc.) — blocks are created only via the type picker.
+- **Phases 5–11**: exactly as scoped in the project brief. `core:network`,
   `core:sync`, `core:notifications`, and
   `feature:{onboarding,auth,projects,search,notifications,canvas}` still
   contain only a placeholder file — see `ARCHITECTURE.md` §"Why some
@@ -169,10 +225,10 @@ documented stopping point.
 ## Blocages
 
 **Still the important part — unchanged since Phase 0, and now covers
-Phase 1, Phase 2, and Phase 3's code too.**
+Phase 1, Phase 2, Phase 3, and Phase 4's code too.**
 
 This session's sandboxed network egress blocks two things a real Android
-build needs, unchanged across all four phases attempted this session:
+build needs, unchanged across all five phases attempted this session:
 
 1. **`dl.google.com`** (Android SDK Manager, and the host
    `maven.google.com` itself redirects to for artifact downloads) — every
@@ -190,8 +246,16 @@ SavedStateHandle route-arg wiring; Phase 3 repeated that pattern for
 `SpaceDao`'s joined/correlated-subquery query and added a second
 `SavedStateHandle.toRoute<AppRoute.X>()` ViewModel (`SpaceDetailViewModel`,
 combining 4 flows) plus a `popUpTo<AppRoute.Spaces>()` reified type-safe
-call in `SuperAppNavHost.kt` that has not been checked against a compiler.
-Treat all of it as "reviewed, not verified" until a real build runs.
+call in `SuperAppNavHost.kt`. Phase 4 adds the riskiest UI code so far:
+`PageDetailScreen`'s `LazyColumn` destructures `items(blocks.zip(indices))`
+with a tuple key lambda, `BlockRow`'s per-type `when` branches mix `Box`/
+`Row` scopes with `Modifier.weight()` (only valid inside the right
+Row/Column scope — reviewed carefully but not compiler-checked), and the
+`superapp.android.feature` convention plugin itself changed (added
+`material-icons-extended` to every feature module — see
+`docs/DECISIONS.md`), which affects every feature module's classpath, not
+just `feature:editor`'s. Treat all of it as "reviewed, not verified" until
+a real build runs.
 
 ### Exact commands run and their exact result (from the Phase 0 pass;
 reproduces identically today — the sandbox's network policy hasn't
@@ -236,25 +300,33 @@ None of this substitutes for an actual `./gradlew assembleDebug`.
 
 ```bash
 ./gradlew projects        # should list all 26 modules
-./gradlew assembleDebug   # first real compile of Phase 0 + 1 + 2 + 3
+./gradlew assembleDebug   # first real compile of Phase 0 + 1 + 2 + 3 + 4
 ./gradlew test            # exercises CreatePostUseCaseTest,
                            # ToggleReactionUseCaseTest, PostDaoTest,
                            # CreateSpaceUseCaseTest, CreatePageUseCaseTest,
-                           # SpaceDaoTest
+                           # SpaceDaoTest, CreateBlockUseCaseTest,
+                           # MoveBlockUseCaseTest, BlockDaoTest
 ./gradlew lint
 ```
 
-Fix whatever surfaces. Prime suspects, in rough likelihood order: the KSP
-version suffix (`docs/DEPENDENCIES.md`), the raw SQL in `PostDao.kt`/
+Fix whatever surfaces. Prime suspects, in rough likelihood order: whether
+every icon used since Phase 1 (`StickyNote2`, `Draw`, `Groups`,
+`AutoMirrored.Article`/`Message`, Phase 4's block-type icons) actually needed
+the `material-icons-extended` fix or was already in `material-icons-core`
+(harmless either way, but confirms whether the fix was load-bearing), the
+KSP version suffix (`docs/DEPENDENCIES.md`), the raw SQL in `PostDao.kt`/
 `SpaceDao.kt` (column aliasing for `@Embedded(prefix = "author_")`, and
-whether the multi-line `SPACE_WITH_STATS_SELECT` string concatenation in
-`SpaceDao.kt` produces valid SQL once Room actually parses it), the
+whether the multi-line `SPACE_WITH_STATS_SELECT` string concatenation
+produces valid SQL once Room actually parses it), the
 `NavDestination.Companion.hasRoute` usage in `app/.../navigation/AppState.kt`,
 the `popUpTo<AppRoute.Spaces>()` reified call in `SuperAppNavHost.kt`
-(added in Phase 3, unverified this is the correct type-safe `popUpTo`
-overload at Navigation Compose 2.9.8), and whether `ModalBottomSheet` still
-needs `@OptIn(ExperimentalMaterial3Api::class)` at Compose BOM 2026.06.00.
-Then update this section and `CHANGELOG.md`.
+(unverified this is the correct type-safe `popUpTo` overload at Navigation
+Compose 2.9.8), the destructuring `items(uiState.blocks.zip(numberedIndices))`
++ tuple `key` lambda in `PageDetailScreen.kt`, the `Modifier.weight()` calls
+inside `BlockRow.kt`'s nested `Row`/`Box` branches (each must resolve
+against its own enclosing scope, not an outer one), and whether
+`ModalBottomSheet`/`DropdownMenu` still need `@OptIn(ExperimentalMaterial3Api::class)`
+at Compose BOM 2026.06.00. Then update this section and `CHANGELOG.md`.
 
 ## Dette technique
 
@@ -277,11 +349,22 @@ Then update this section and `CHANGELOG.md`.
   `SpaceDetailViewModel`/`PageDetailViewModel` yet (only the use cases and
   the DAOs are tested) — the ViewModels are thin enough that the use-case
   tests cover the real logic, but a `Turbine`-based ViewModel test is
-  reasonable follow-up work.
-- `PageDetailViewModel` auto-saves the title on every keystroke (calls
-  `RenamePageUseCase` per character, no debounce) — acceptable at
-  local-only, single-user demo-data scale, but would need debouncing before
-  a real network-backed save-on-type exists (Phase 10).
+  reasonable follow-up work. `PageDetailViewModel`'s block-reconciliation
+  logic (preserving locally-typed content across DB echoes) is exactly the
+  kind of thing that deserves one first.
+- `PageDetailViewModel` auto-saves the title and every block's content on
+  every keystroke (no debounce) — acceptable at local-only, single-user
+  demo-data scale, but would need debouncing before a real network-backed
+  save-on-type exists (Phase 10).
+- Block position swaps (`moveBlock`) and inserts (`createBlock`) are not
+  transactional — two sequential `blockDao.update()` calls, or a
+  `listForPage()` read followed by an `insert()`, could theoretically
+  interleave with another write in between. Not a real risk yet (no
+  concurrent writers in a local single-user demo), but worth a Room
+  `@Transaction` before Phase 10 adds a sync queue that writes
+  concurrently.
+- No drag-and-drop block reordering (only up/down move actions) — see
+  "Fonctionnalités restantes" above.
 
 ## TODO justifiés
 
@@ -292,15 +375,18 @@ remaining non-post, non-space actions intentionally only show a snackbar
 (no create flow exists yet for notes/tasks/projects/messages/canvas, and
 "Nouvelle page" specifically requires picking a space first, which the
 sheet doesn't have a flow for yet — creating a page today only happens from
-inside `SpaceDetailScreen`).
+inside `SpaceDetailScreen`). The six deferred `BlockType` values
+(`IMAGE`/`FILE`/`LINK`/`TASK_REFERENCE`/`PAGE_REFERENCE`/
+`CANVAS_REFERENCE`) simply don't appear in `BlockTypePickerContent`'s
+option list — not silently broken, just not offered yet.
 
 ## Dernier build exécuté
 
 `gradle projects` (system Gradle 8.14.3) on 2026-07-12 — failed at AGP
 plugin resolution (network blocker above), not evaluated further. Not
-re-attempted after Phase 1, Phase 2, or Phase 3's changes since the blocker
-is unchanged; see "What was done instead" above for the static checks that
-were run each pass.
+re-attempted after Phase 1, Phase 2, Phase 3, or Phase 4's changes since the
+blocker is unchanged; see "What was done instead" above for the static
+checks that were run each pass.
 
 ## Derniers tests exécutés
 
@@ -308,10 +394,14 @@ None — no test task has run (blocked upstream of test compilation by the
 same AGP/SDK unavailability). This session did *write* tests it has not
 been able to run: `CreatePostUseCaseTest`, `ToggleReactionUseCaseTest`
 (pure JVM, fakes only, core:domain), `PostDaoTest` (Robolectric + in-memory
-Room, core:database), and, from Phase 3, `CreateSpaceUseCaseTest`,
+Room, core:database); from Phase 3, `CreateSpaceUseCaseTest`,
 `CreatePageUseCaseTest` (pure JVM, fakes only, core:domain) and
 `SpaceDaoTest` (Robolectric + in-memory Room, core:database — covers the
 joined member/page-count query, including the "viewer never joined this
-space" exclusion case). These are the first tests to actually exercise in a
-networked environment, since they're the lowest-risk/highest-value ones to
-confirm first.
+space" exclusion case); and from Phase 4, `CreateBlockUseCaseTest` (gap-based
+position math: first block, insert-between, append-after-last),
+`MoveBlockUseCaseTest` (swap up/down, no-op at either edge — pure JVM,
+fakes only, core:domain), and `BlockDaoTest` (Robolectric + in-memory Room,
+core:database — ordering by position, delete, content/checked update).
+These are the first tests to actually exercise in a networked environment,
+since they're the lowest-risk/highest-value ones to confirm first.

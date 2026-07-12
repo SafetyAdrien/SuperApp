@@ -84,11 +84,12 @@ equivalent typed pair) — see `feature/settings/.../SettingsUiState.kt` and,
 since Phase 2, `feature/home/.../ComposePostUiState.kt` /
 `PostDetailUiState.kt`, and since Phase 3,
 `feature/spaces/.../{SpacesUiState,CreateSpaceUiState,SpaceDetailUiState}.kt`
-and `feature/editor/.../PageDetailUiState.kt`. `AppError` (`core:common`) is
-the typed error hierarchy; raw exception messages never cross into the UI
-layer. Purely static placeholder screens (Messages for now) skip the
-ViewModel/UiState pair since they hold no state yet — one is introduced the
-moment a screen gets real content, not before.
+and `feature/editor/.../PageDetailUiState.kt` (extended in Phase 4 with the
+block list). `AppError` (`core:common`) is the typed error hierarchy; raw
+exception messages never cross into the UI layer. Purely static placeholder
+screens (Messages for now) skip the ViewModel/UiState pair since they hold
+no state yet — one is introduced the moment a screen gets real content, not
+before.
 
 ## Navigation shell (Phase 1) and entity routes (Phase 2+)
 
@@ -131,9 +132,16 @@ same way: `core:model`, `core:database` (entities, DAOs — including the
 joined member/page-count query in `SpaceDao`, mappers, demo seeding),
 `core:domain` (repositories, use cases), `core:testing` (fake repositories),
 `feature:spaces`'s real space browser/creation/detail screens, and
-`feature:editor`'s minimal page shell (an editable title and an empty state
-— the block editor itself, the reason `feature:editor` exists, is a later
-phase).
+`feature:editor`'s minimal page shell (an editable title and an empty
+state). Phase 4 filled that empty state in: Block, the actual page body —
+`core:model`/`core:database`/`core:domain`/`core:testing` follow the same
+pattern again, and `feature:editor`'s `PageDetailScreen` now renders a real,
+editable block list (11 of the brief's 15 block types — see
+`docs/DATA_MODEL.md` for which are deferred and why) with a "slash-menu"
+equivalent (a bottom sheet, `BlockTypePickerContent`, reusing the same
+`SuperBottomSheet` pattern as the "Créer" sheet) and a per-block action menu
+(insert below / move up / move down / delete, a plain Material3
+`DropdownMenu` since `SuperContextMenu` isn't built yet).
 
 `core:network`, `core:sync`, `core:notifications`, and the features not
 reachable from the bottom nav yet (onboarding, auth, projects, messages'
