@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Deliberately excludes the local Room database and DataStore preference files
+   from Android's auto-backup: restoring a stale local-only database onto a new
+   device would silently resurrect deleted content and desynchronize the sync
+   queue. Re-evaluate once the remote backend is the source of truth.
+-->
+<full-backup-content>
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+</full-backup-content>

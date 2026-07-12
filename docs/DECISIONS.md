@@ -1,0 +1,99 @@
+# Decisions
+
+Short ADRs. Newest first.
+
+---
+
+## Apply `org.jetbrains.kotlin.android` explicitly instead of relying on AGP 9's built-in Kotlin
+
+**Contexte** — AGP 9.0+ compiles Kotlin without requiring the
+`org.jetbrains.kotlin.android` plugin ("built-in Kotlin"). The Compose
+compiler plugin and KSP2 are documented and battle-tested against the
+classic explicit-KGP setup; built-in Kotlin's interaction with the Compose
+compiler Gradle plugin and KSP is new (April 2026) and could not be verified
+by an actual build in this environment (see the network limitation below).
+
+**Décision** — `superapp.android.*` convention plugins explicitly apply
+`org.jetbrains.kotlin.android`, which takes precedence over AGP's built-in
+Kotlin.
+
+**Raisons** — Known-compatible with KSP2 and the Compose compiler plugin;
+easy to remove later once built-in Kotlin's interaction with those two
+plugins is confirmed stable in a networked environment.
+
+**Conséquences** — One extra plugin application per module vs. the AGP 9
+default path; revisit in Phase 11 stabilization once a real build has run.
+
+---
+
+## Use `androidx.navigation:navigation-compose` (2.9.8) instead of Navigation 3
+
+**Contexte** — The brief asks for "Navigation 3 stable." As of this session,
+`androidx.navigation3` ships only alpha/rc artifacts
+(`navigation3-runtime:1.0.0-alpha10`, `1.1.0-alpha01`); there is no stable
+1.0.0 release yet (verified via web search, 2026-07-12).
+
+**Décision** — Build on the stable Navigation Compose 2.9.8 (type-safe,
+`@Serializable`-backed routes) instead, structured so the route contracts in
+`core:navigation` (`AppRoute` sealed hierarchy, one `@Serializable` data
+class/object per destination) map almost directly onto Navigation 3's
+`NavKey` model.
+
+**Raisons** — Rule: never add an alpha dependency for convenience; Navigation
+3 is not "stable" as of today regardless of the brief's phrasing.
+
+**Conséquences** — When Navigation 3 reaches 1.0.0 stable, migrate
+`core:navigation` and the nav host in `:app`; the route-contract module
+boundary was chosen specifically to make that swap local to those two
+places.
+
+---
+
+## Use Room 2.8.4 instead of Room 3.0.0
+
+**Contexte** — Room 3.0.0 went stable on 2026-07-01 (11 days before this
+session) under a new `androidx.room3` namespace: KMP-first, Kotlin-only
+codegen, all-suspend DAOs. Room 2.x is in maintenance mode but still
+receiving stable patch releases (2.8.4, March 2026).
+
+**Décision** — Use Room 2.8.4 for the initial scaffold.
+
+**Raisons** — The brief explicitly allows this: "if Room 3.0 stable is
+properly supported by the environment and chosen dependencies, use it;
+otherwise use the latest stable Room 2.x." Room 3.0 is 11 days old, changes
+the artifact namespace, and this session cannot build-test the interaction
+with Paging 3, WorkManager, or Hilt against it. Room 2.x is the
+lower-risk choice for a foundation other modules will build on immediately.
+
+**Conséquences** — Revisit in Phase 11 (or sooner) once Room 3.0's ecosystem
+support (Paging, migration tooling) has had more time to mature and can be
+verified with a real build.
+
+---
+
+## Network/SDK access blocker — Phase 0 build could not be verified
+
+**Contexte** — This session's egress policy blocks `dl.google.com` (Android
+SDK Manager and the actual host `maven.google.com` redirects to for
+artifact downloads), and `github.com` downloads are restricted to the
+`safetyadrien/superapp` repository, which blocks fetching the Gradle 9.4.1
+distribution (hosted at
+`github.com/gradle/gradle-distributions/releases`). No Android SDK is
+installed locally either.
+
+**Décision** — Build the complete Phase 0 scaffold (all modules, convention
+plugins, version catalog, docs, CI) using verified-current stable version
+numbers (via web search against official release notes / Maven Central),
+without being able to run `./gradlew assembleDebug` / `test` / `lint`
+successfully in this session.
+
+**Raisons** — Rule 25: "in case of network or SDK blockage, continue every
+task that can be done locally and document the blocker precisely" rather
+than stopping or fabricating a passing build.
+
+**Conséquences** — The very first action in a networked environment must be
+`./gradlew projects` followed by `assembleDebug`, `test`, `lint`, fixing
+whatever surfaces — version catalog entries here were chosen carefully but
+are not guaranteed to resolve without adjustment (see
+`docs/DEPENDENCIES.md` for the confidence level on each version). See
+`PROJECT_STATUS.md` for the exact commands run and their exact output.

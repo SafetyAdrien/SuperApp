@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+       Bootstrap window-chrome colors only (splash screen, base window background).
+       The design-token source of truth for the app UI itself is
+       core/designsystem (SuperAppColors), not this file — see docs/DESIGN_SYSTEM.md.
+    -->
+    <color name="window_background">#FAFAFB</color>
+    <color name="brand_primary">#0A7AFF</color>
+</resources>

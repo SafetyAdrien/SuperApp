@@ -1,0 +1,11 @@
+# Copy this file to `local.properties` (never commit the real file).
+#
+# sdk.dir points Gradle at your local Android SDK installation.
+sdk.dir=/path/to/Android/sdk
+
+# Supabase client configuration (public values only — never put service-role
+# or other secret keys here). These are read by app/build.gradle.kts and
+# injected into BuildConfig. Leave blank to run in DataEnvironment.LOCAL_DEMO
+# only.
+SUPABASE_URL=
+SUPABASE_ANON_KEY=

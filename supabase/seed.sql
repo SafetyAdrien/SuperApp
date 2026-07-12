@@ -1,0 +1,3 @@
+-- Seed data for a local/self-hosted Supabase instance used during development.
+-- Intentionally empty until Phase 10 introduces the schema migrations this
+-- would seed against. Never put production data in this file.
