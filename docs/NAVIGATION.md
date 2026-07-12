@@ -48,9 +48,12 @@ Predictive back where supported, standard system back otherwise, saved
 navigation state across process death (`rememberSaveable` /
 `SavedStateHandle`), edge-to-edge with correct system bar insets.
 
-**Status**: `AppRoute` (Home/Spaces/Messages/Profile/Settings) is
-implemented and wired into a real `NavHost` in `:app`
-(`navigation/SuperAppNavHost.kt`), driven by the five-destination bottom
-navigation bar (`ui/MainScreen.kt`). Deep links (`superapp://...`) and the
-`EntityRef` resolver are not implemented yet — there are no entity detail
-screens to resolve to before Phase 2.
+**Status**: `AppRoute` (Home/Spaces/Messages/Profile/Settings plus the
+entity/action routes `PostDetail`/`ComposePost` from Phase 2 and
+`CreateSpace`/`SpaceDetail`/`PageDetail` from Phase 3) is implemented and
+wired into a real `NavHost` in `:app` (`navigation/SuperAppNavHost.kt`),
+driven by the five-destination bottom navigation bar (`ui/MainScreen.kt`).
+Deep links (`superapp://...`) and the `EntityRef` resolver are still not
+implemented — there is no cross-feature "open by type + id" caller yet,
+since each entity route so far is only ever navigated to from the feature
+that owns it.

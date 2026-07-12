@@ -77,4 +77,7 @@ phase first needs each one, rather than built speculatively. Home's tabs use
 plain Material 3 `TabRow`/`Tab` and Settings uses plain `RadioButton`/
 `Switch` directly — `SuperTabs`/`SuperSegmentedControl` and a hypothetical
 `SuperSwitch` aren't built yet, and duplicating them for one screen each
-isn't worth it until a second caller shows up.
+isn't worth it until a second caller shows up. Phase 3's
+`CreateSpaceScreen` reuses the same plain-`RadioButton` pattern for its
+visibility picker — a second caller, still not enough on its own to justify
+extending `SuperSegmentedControl` off the backlog.

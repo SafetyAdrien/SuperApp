@@ -1,7 +1,7 @@
 # Project status
 
-Last updated: 2026-07-12 (Phase 0 + Phase 1 + Phase 2, same sandboxed
-session, build still unverified — see "Blocages").
+Last updated: 2026-07-12 (Phase 0 + Phase 1 + Phase 2 + Phase 3, same
+sandboxed session, build still unverified — see "Blocages").
 
 ## Fonctionnalités terminées
 
@@ -87,6 +87,46 @@ session, build still unverified — see "Blocages").
   `SuperAppApplication.onCreate()` triggers `DemoDataSeeder` on an
   `@ApplicationScope` `CoroutineScope` (new in `core:common`).
 
+### Phase 3 — espaces et pages
+
+- **`core:model`**: `Space` (+ `SpaceVisibility`), `SpaceMember` (+
+  `SpaceMemberRole`), `SpaceWithStats` (read model: a space plus its member
+  and page counts), `Page`.
+- **`core:database`**: `SpaceEntity`/`SpaceMemberEntity`/`PageEntity`,
+  `SpaceDao`/`PageDao`, mappers, extended `SuperAppDatabase` (still schema
+  version 1 — see the comment on the `@Database` annotation, this has never
+  shipped to a real device in this sandbox so there is nothing to migrate
+  from). `SpaceDao.observeSpacesForMember`/`observeSpace` join a space with
+  correlated member-count/page-count subqueries into `SpaceWithStatsRow`,
+  the same shape convention as Phase 2's `PostFeedRow`. `DemoDataSeeder` now
+  also seeds 2 demo spaces ("Personnel", "Équipe Design"), the demo profile
+  as `OWNER` member of both, and 2 pages per space.
+- **`core:domain`**: `SpaceRepository`/`PageRepository` interfaces;
+  `ObserveSpacesUseCase`, `ObserveSpaceUseCase`, `CreateSpaceUseCase`,
+  `ObservePagesUseCase`, `ObservePageUseCase`, `CreatePageUseCase`,
+  `RenamePageUseCase`. Same author-resolution pattern as `CreatePostUseCase`:
+  the use case resolves the current profile and passes a caller id
+  (`ownerId`/`createdBy`) into the repository, which stays pure persistence.
+- **`core:testing`**: `FakeSpaceRepository`, `FakePageRepository`.
+- **`core:navigation`**: `AppRoute.CreateSpace`, `AppRoute.SpaceDetail
+  (spaceId)`, `AppRoute.PageDetail(pageId)`.
+- **`feature:spaces`**: real space browser (`SpacesScreen` — list with
+  member/page counts, empty state, FAB), `CreateSpaceScreen` (name,
+  optional description, visibility radio group — mirrors
+  `SettingsScreen`'s plain-Material3 radio pattern since `SuperSegmentedControl`
+  isn't built yet), `SpaceDetailScreen` (top-level pages of a space, FAB
+  that creates a page titled "Page sans titre" and navigates straight into
+  it — same "new page" UX as most block-editor apps, not a Notion visual
+  clone). The "Créer" sheet's "Nouvel espace" action now opens
+  `CreateSpaceScreen`; the remaining six actions still show "bientôt
+  disponible".
+- **`feature:editor`**: first real code in this module —
+  `PageDetailScreen`/`ViewModel`/`UiState`: an editable title (auto-saved
+  via `RenamePageUseCase` on every change) plus an explicit empty state
+  explaining the block editor is a later phase. This is intentionally thin;
+  `feature:editor`'s actual scope (paragraph/heading/list/checklist/quote/
+  callout/code/references, slash menu) is unbuilt.
+
 ## Fonctionnalités en cours
 
 None open mid-implementation — every phase attempted this session reached a
@@ -99,19 +139,29 @@ documented stopping point.
   scope them. `feature:onboarding`/`feature:auth` still contain only a
   placeholder file; `MainActivity` launches straight into `MainScreen` with
   no onboarding gate. Known, intentional gap.
-- **Rest of Phase 2**: "Abonnements" and "Activité" tabs are empty-state
-  only (no follow graph / activity feed model yet — that's really Phase 3+
-  territory once Spaces exist). No image attachments on posts. No draft
-  persistence for the composer (closing it loses the text). No
-  optimistic-publish UI (the brief asks for it; current implementation
-  waits for the (synchronous, local-only) write to complete — acceptable
-  for now since there's no network latency to hide yet, revisit once
-  Phase 10 adds a real backend).
-- **Phases 3–11**: exactly as scoped in the project brief. `core:network`,
+- **Rest of Phase 2**: "Abonnements" and "Activité" tabs are still
+  empty-state only — a follow graph and an activity-feed model don't exist
+  yet, and Phase 3 didn't add either (Spaces existing doesn't imply a
+  follow graph). No image attachments on posts. No draft persistence for
+  the composer (closing it loses the text). No optimistic-publish UI (the
+  brief asks for it; current implementation waits for the (synchronous,
+  local-only) write to complete — acceptable for now since there's no
+  network latency to hide yet, revisit once Phase 10 adds a real backend).
+- **Rest of Phase 3**: no space settings/member-management screen (a viewer
+  can create a space and see its member count, but there is no "invite a
+  member" flow — that needs either a second demo profile or real accounts,
+  neither of which exist). No nested sub-pages: `Page.parentPageId` exists
+  in the model and `PageDao.observePagesForSpace` already filters to
+  top-level pages only, but no screen creates or navigates into a child
+  page. No page icon/cover picker (the fields exist, always null). No
+  archiving/deleting a space or page. The block editor itself — the actual
+  reason `feature:editor` exists — is entirely unbuilt; `PageDetailScreen`
+  only has a title field and an explicit "coming soon" empty state.
+- **Phases 4–11**: exactly as scoped in the project brief. `core:network`,
   `core:sync`, `core:notifications`, and
-  `feature:{onboarding,auth,editor,projects,search,notifications,canvas}`
-  still contain only a placeholder file — see `ARCHITECTURE.md`
-  §"Why some directories only contain a placeholder file right now".
+  `feature:{onboarding,auth,projects,search,notifications,canvas}` still
+  contain only a placeholder file — see `ARCHITECTURE.md` §"Why some
+  directories only contain a placeholder file right now".
 - ~20 `Super*` design-system components not yet built (see
   `docs/DESIGN_SYSTEM.md` §Status) — deferred until a feature needs each
   one.
@@ -119,10 +169,10 @@ documented stopping point.
 ## Blocages
 
 **Still the important part — unchanged since Phase 0, and now covers
-Phase 1 and Phase 2's code too.**
+Phase 1, Phase 2, and Phase 3's code too.**
 
 This session's sandboxed network egress blocks two things a real Android
-build needs, unchanged across all three phases attempted this session:
+build needs, unchanged across all four phases attempted this session:
 
 1. **`dl.google.com`** (Android SDK Manager, and the host
    `maven.google.com` itself redirects to for artifact downloads) — every
@@ -136,9 +186,12 @@ Maven dependency, and no Gradle 9.4.1 distribution could be resolved in
 this session. **None of this repository's Kotlin/Compose/Room code has
 ever been compiled.** Phase 2 added the first non-trivial SQL (a
 multi-subquery `PagingSource` query) and the first Paging 3 + Hilt +
-SavedStateHandle route-arg wiring — meaningfully more surface area for a
-real compiler to disagree with than Phase 0/1. Treat all of it as
-"reviewed, not verified" until a real build runs.
+SavedStateHandle route-arg wiring; Phase 3 repeated that pattern for
+`SpaceDao`'s joined/correlated-subquery query and added a second
+`SavedStateHandle.toRoute<AppRoute.X>()` ViewModel (`SpaceDetailViewModel`,
+combining 4 flows) plus a `popUpTo<AppRoute.Spaces>()` reified type-safe
+call in `SuperAppNavHost.kt` that has not been checked against a compiler.
+Treat all of it as "reviewed, not verified" until a real build runs.
 
 ### Exact commands run and their exact result (from the Phase 0 pass;
 reproduces identically today — the sandbox's network policy hasn't
@@ -183,17 +236,23 @@ None of this substitutes for an actual `./gradlew assembleDebug`.
 
 ```bash
 ./gradlew projects        # should list all 26 modules
-./gradlew assembleDebug   # first real compile of Phase 0 + 1 + 2
+./gradlew assembleDebug   # first real compile of Phase 0 + 1 + 2 + 3
 ./gradlew test            # exercises CreatePostUseCaseTest,
-                           # ToggleReactionUseCaseTest, PostDaoTest
+                           # ToggleReactionUseCaseTest, PostDaoTest,
+                           # CreateSpaceUseCaseTest, CreatePageUseCaseTest,
+                           # SpaceDaoTest
 ./gradlew lint
 ```
 
 Fix whatever surfaces. Prime suspects, in rough likelihood order: the KSP
-version suffix (`docs/DEPENDENCIES.md`), the raw SQL in `PostDao.kt` (column
-aliasing for the `@Embedded(prefix = "author_")` join is the most likely
-typo location), the `NavDestination.Companion.hasRoute` usage in
-`app/.../navigation/AppState.kt`, and whether `ModalBottomSheet` still
+version suffix (`docs/DEPENDENCIES.md`), the raw SQL in `PostDao.kt`/
+`SpaceDao.kt` (column aliasing for `@Embedded(prefix = "author_")`, and
+whether the multi-line `SPACE_WITH_STATS_SELECT` string concatenation in
+`SpaceDao.kt` produces valid SQL once Room actually parses it), the
+`NavDestination.Companion.hasRoute` usage in `app/.../navigation/AppState.kt`,
+the `popUpTo<AppRoute.Spaces>()` reified call in `SuperAppNavHost.kt`
+(added in Phase 3, unverified this is the correct type-safe `popUpTo`
+overload at Navigation Compose 2.9.8), and whether `ModalBottomSheet` still
 needs `@OptIn(ExperimentalMaterial3Api::class)` at Compose BOM 2026.06.00.
 Then update this section and `CHANGELOG.md`.
 
@@ -206,30 +265,41 @@ Then update this section and `CHANGELOG.md`.
 - No launcher icon asset pipeline — placeholder vector shapes, explicitly
   commented as temporary.
 - No onboarding gate in `MainActivity` yet.
-- `feature:spaces`/`messages`/`profile` are still empty-state screens with
-  no ViewModel — intentional (no state to manage yet).
+- `feature:messages`/`profile` are still empty-state screens with no
+  ViewModel — intentional (no state to manage yet). `feature:spaces` lost
+  this exemption in Phase 3 (it now has three real ViewModels).
 - The feed's Paging `PagingSource` is invalidated wholesale on any write
   (Room's default behavior) — fine at demo-data scale, worth revisiting
-  once Phase 10's sync queue can make writes more granular.
+  once Phase 10's sync queue can make writes more granular. `SpaceDao`'s
+  joined query has the same property.
 - No unit test for `HomeViewModel`/`ComposePostViewModel`/
-  `PostDetailViewModel` yet (only the use cases and the DAO are tested) —
-  the ViewModels are thin enough that the use-case tests cover the real
-  logic, but a `Turbine`-based ViewModel test is reasonable follow-up work.
+  `PostDetailViewModel`/`SpacesViewModel`/`CreateSpaceViewModel`/
+  `SpaceDetailViewModel`/`PageDetailViewModel` yet (only the use cases and
+  the DAOs are tested) — the ViewModels are thin enough that the use-case
+  tests cover the real logic, but a `Turbine`-based ViewModel test is
+  reasonable follow-up work.
+- `PageDetailViewModel` auto-saves the title on every keystroke (calls
+  `RenamePageUseCase` per character, no debounce) — acceptable at
+  local-only, single-user demo-data scale, but would need debouncing before
+  a real network-backed save-on-type exists (Phase 10).
 
 ## TODO justifiés
 
 Every `// Placeholder for Phase N: ...` comment is an intentional, explained
 TODO naming the exact phase that replaces it — none are silently-empty
-features standing in for real functionality. The "Créer" sheet's seven
-non-post actions intentionally only show a snackbar (no create flow exists
-yet to open for pages/notes/tasks/projects/messages/spaces/canvas).
+features standing in for real functionality. The "Créer" sheet's six
+remaining non-post, non-space actions intentionally only show a snackbar
+(no create flow exists yet for notes/tasks/projects/messages/canvas, and
+"Nouvelle page" specifically requires picking a space first, which the
+sheet doesn't have a flow for yet — creating a page today only happens from
+inside `SpaceDetailScreen`).
 
 ## Dernier build exécuté
 
 `gradle projects` (system Gradle 8.14.3) on 2026-07-12 — failed at AGP
 plugin resolution (network blocker above), not evaluated further. Not
-re-attempted after Phase 1 or Phase 2's changes since the blocker is
-unchanged; see "What was done instead" above for the static checks that
+re-attempted after Phase 1, Phase 2, or Phase 3's changes since the blocker
+is unchanged; see "What was done instead" above for the static checks that
 were run each pass.
 
 ## Derniers tests exécutés
@@ -237,7 +307,11 @@ were run each pass.
 None — no test task has run (blocked upstream of test compilation by the
 same AGP/SDK unavailability). This session did *write* tests it has not
 been able to run: `CreatePostUseCaseTest`, `ToggleReactionUseCaseTest`
-(pure JVM, fakes only, core:domain) and `PostDaoTest` (Robolectric +
-in-memory Room, core:database). These are the first tests to actually
-exercise in a networked environment, since they're the lowest-risk/
-highest-value ones to confirm first.
+(pure JVM, fakes only, core:domain), `PostDaoTest` (Robolectric + in-memory
+Room, core:database), and, from Phase 3, `CreateSpaceUseCaseTest`,
+`CreatePageUseCaseTest` (pure JVM, fakes only, core:domain) and
+`SpaceDaoTest` (Robolectric + in-memory Room, core:database — covers the
+joined member/page-count query, including the "viewer never joined this
+space" exclusion case). These are the first tests to actually exercise in a
+networked environment, since they're the lowest-risk/highest-value ones to
+confirm first.

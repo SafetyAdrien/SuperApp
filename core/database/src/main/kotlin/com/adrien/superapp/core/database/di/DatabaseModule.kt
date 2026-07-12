@@ -3,9 +3,11 @@ package com.adrien.superapp.core.database.di
 import android.content.Context
 import androidx.room.Room
 import com.adrien.superapp.core.database.SuperAppDatabase
+import com.adrien.superapp.core.database.dao.PageDao
 import com.adrien.superapp.core.database.dao.PostDao
 import com.adrien.superapp.core.database.dao.ProfileDao
 import com.adrien.superapp.core.database.dao.ReactionDao
+import com.adrien.superapp.core.database.dao.SpaceDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,4 +34,10 @@ object DatabaseModule {
 
     @Provides
     fun providesReactionDao(database: SuperAppDatabase): ReactionDao = database.reactionDao()
+
+    @Provides
+    fun providesSpaceDao(database: SuperAppDatabase): SpaceDao = database.spaceDao()
+
+    @Provides
+    fun providesPageDao(database: SuperAppDatabase): PageDao = database.pageDao()
 }

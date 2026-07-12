@@ -59,6 +59,18 @@ are stored polymorphically as designed
 (`entityType` + `entityId`), even though only `EntityType.POST` has a real
 producer so far. The feed query joins posts + author + correlated
 reaction/reply-count subqueries in one `PagingSource<Int, PostFeedRow>` —
-see `core/database/.../dao/PostDao.kt`. Remaining entities (Space,
-SpaceMember, Page, Block, Task, Conversation, Message, AppNotification,
-CanvasDocument, CanvasNode) land with their owning phase.
+see `core/database/.../dao/PostDao.kt`.
+
+Phase 3 added Space, SpaceMember, and Page the same way: `SpaceDao`'s
+`observeSpacesForMember`/`observeSpace` join a space with two correlated
+subqueries (member count, non-archived page count) into
+`SpaceWithStatsRow` — the same shape as `PostFeedRow`, just without a
+`ProfileEntity` join since a space browser row doesn't need one. `Page` has
+no Room migration story of its own yet because `SuperAppDatabase` is still
+version 1 (see the comment on `SuperAppDatabase`) — Block content (the
+page's actual body) is deliberately not modeled yet, since it belongs to
+whichever phase adds `feature:editor`'s block editor; `Page` today is just
+title/icon/cover metadata plus a `parentPageId` for future nesting that no
+screen navigates into yet (`PageDao.observePagesForSpace` only returns
+top-level pages). Remaining entities (Block, Task, Conversation, Message,
+AppNotification, CanvasDocument, CanvasNode) land with their owning phase.

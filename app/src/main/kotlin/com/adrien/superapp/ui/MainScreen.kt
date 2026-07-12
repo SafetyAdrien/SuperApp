@@ -68,10 +68,10 @@ fun MainScreen(
             CreateSheetContent(
                 onAction = { action ->
                     showCreateSheet = false
-                    if (action == CreateAction.NEW_POST) {
-                        appState.navController.navigate(AppRoute.ComposePost())
-                    } else {
-                        coroutineScope.launch {
+                    when (action) {
+                        CreateAction.NEW_POST -> appState.navController.navigate(AppRoute.ComposePost())
+                        CreateAction.NEW_SPACE -> appState.navController.navigate(AppRoute.CreateSpace)
+                        else -> coroutineScope.launch {
                             snackbarHostState.showSnackbar("${action.label} — bientôt disponible")
                         }
                     }

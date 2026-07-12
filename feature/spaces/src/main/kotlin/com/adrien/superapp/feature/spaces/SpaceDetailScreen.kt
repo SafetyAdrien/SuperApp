@@ -7,8 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,40 +22,41 @@ import com.adrien.superapp.core.designsystem.component.SuperTopAppBar
 import com.adrien.superapp.core.designsystem.theme.SuperAppTheme
 
 @Composable
-fun SpacesScreen(
-    onSpaceClick: (String) -> Unit,
-    onCreateSpaceClick: () -> Unit,
+fun SpaceDetailScreen(
+    onBackClick: () -> Unit,
+    onPageClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SpacesViewModel = hiltViewModel(),
+    viewModel: SpaceDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(uiState.createdPageId) {
+        uiState.createdPageId?.let(onPageClick)
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SuperTopAppBar(title = "Espaces")
+            SuperTopAppBar(title = uiState.space?.space?.name ?: "Espace", onBackClick = onBackClick)
 
             when {
                 uiState.isLoading -> SuperLoadingIndicator()
-                uiState.spaces.isEmpty() -> SuperEmptyState(
-                    title = "Aucun espace pour l'instant",
-                    subtitle = "Créez un espace pour réunir pages, projets et discussions.",
-                    icon = Icons.Filled.Folder,
+                uiState.pages.isEmpty() -> SuperEmptyState(
+                    title = "Aucune page pour l'instant",
+                    subtitle = "Créez une première page pour cet espace.",
+                    icon = Icons.AutoMirrored.Filled.Article,
                     modifier = Modifier.fillMaxSize(),
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(items = uiState.spaces, key = { it.space.id }) { spaceWithStats ->
-                        SpaceListItem(
-                            spaceWithStats = spaceWithStats,
-                            onClick = { onSpaceClick(spaceWithStats.space.id) },
-                        )
+                    items(items = uiState.pages, key = { it.id }) { page ->
+                        PageListItem(page = page, onClick = { onPageClick(page.id) })
                     }
                 }
             }
         }
 
         SuperFloatingActionButton(
-            contentDescription = "Nouvel espace",
-            onClick = onCreateSpaceClick,
+            contentDescription = "Nouvelle page",
+            onClick = viewModel::onCreatePageClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(SuperAppTheme.spacing.space16),

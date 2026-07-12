@@ -1,10 +1,17 @@
 package com.adrien.superapp.core.database.seed
 
+import com.adrien.superapp.core.database.dao.PageDao
 import com.adrien.superapp.core.database.dao.PostDao
 import com.adrien.superapp.core.database.dao.ProfileDao
+import com.adrien.superapp.core.database.dao.SpaceDao
+import com.adrien.superapp.core.database.entity.PageEntity
 import com.adrien.superapp.core.database.entity.PostEntity
 import com.adrien.superapp.core.database.entity.ProfileEntity
+import com.adrien.superapp.core.database.entity.SpaceEntity
+import com.adrien.superapp.core.database.entity.SpaceMemberEntity
 import com.adrien.superapp.core.model.PostVisibility
+import com.adrien.superapp.core.model.SpaceMemberRole
+import com.adrien.superapp.core.model.SpaceVisibility
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,6 +25,8 @@ import javax.inject.Singleton
 class DemoDataSeeder @Inject constructor(
     private val profileDao: ProfileDao,
     private val postDao: PostDao,
+    private val spaceDao: SpaceDao,
+    private val pageDao: PageDao,
 ) {
     suspend fun seedIfEmpty() {
         if (profileDao.count() > 0) return
@@ -58,5 +67,53 @@ class DemoDataSeeder @Inject constructor(
             )
         }
         postDao.insertAll(demoPosts)
+
+        val demoSpaces = listOf(
+            "Personnel" to "Notes et pages personnelles.",
+            "Équipe Design" to "Espace partagé pour l'équipe design.",
+        )
+        val spaceEntities = demoSpaces.map { (name, description) ->
+            SpaceEntity(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                description = description,
+                icon = null,
+                ownerId = demoProfile.id,
+                visibility = SpaceVisibility.PRIVATE.name,
+                createdAt = now,
+                updatedAt = now,
+            )
+        }
+        spaceDao.insertAll(spaceEntities)
+        spaceDao.insertMembers(
+            spaceEntities.map { space ->
+                SpaceMemberEntity(
+                    spaceId = space.id,
+                    profileId = demoProfile.id,
+                    role = SpaceMemberRole.OWNER.name,
+                    joinedAt = now,
+                )
+            },
+        )
+
+        val demoPageTitles = listOf("Bienvenue", "Idées")
+        val pageEntities = spaceEntities.flatMap { space ->
+            demoPageTitles.mapIndexed { index, title ->
+                val createdAt = now - (demoPageTitles.size - index) * 30_000L
+                PageEntity(
+                    id = UUID.randomUUID().toString(),
+                    spaceId = space.id,
+                    parentPageId = null,
+                    title = title,
+                    icon = null,
+                    coverUrl = null,
+                    createdBy = demoProfile.id,
+                    createdAt = createdAt,
+                    updatedAt = createdAt,
+                    archivedAt = null,
+                )
+            }
+        }
+        pageDao.insertAll(pageEntities)
     }
 }

@@ -5,6 +5,40 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Phase 3: spaces and pages
+
+- `core:model`: `Space`/`SpaceVisibility`, `SpaceMember`/`SpaceMemberRole`,
+  `SpaceWithStats`, `Page`.
+- `core:database`: `SpaceEntity`/`SpaceMemberEntity`/`PageEntity`,
+  `SpaceDao` (joined member/page-count query, same `*WithStatsRow`
+  convention as Phase 2's `PostFeedRow`), `PageDao`, mappers.
+  `DemoDataSeeder` now also seeds 2 demo spaces (with the demo profile as
+  `OWNER`) and 2 pages per space.
+- `core:domain`: `SpaceRepository`/`PageRepository` interfaces (implemented
+  in `core:database`) and seven use cases (`ObserveSpacesUseCase`,
+  `ObserveSpaceUseCase`, `CreateSpaceUseCase`, `ObservePagesUseCase`,
+  `ObservePageUseCase`, `CreatePageUseCase`, `RenamePageUseCase`).
+- `core:testing`: `FakeSpaceRepository`, `FakePageRepository`.
+- `core:navigation`: `AppRoute.CreateSpace`, `AppRoute.SpaceDetail`,
+  `AppRoute.PageDetail`.
+- `feature:spaces`: real space browser, space creation (name/description/
+  visibility), and space detail (top-level pages + "new page" FAB). The
+  "Créer" sheet's "Nouvel espace" action now opens the real create-space
+  screen.
+- `feature:editor`: first real code — a minimal page shell (editable title,
+  autosaved; explicit "block editor coming soon" empty state). The actual
+  block editor remains unbuilt.
+- New tests: `CreateSpaceUseCaseTest`, `CreatePageUseCaseTest`
+  (core:domain), `SpaceDaoTest` (core:database, Robolectric + in-memory
+  Room).
+
+### Known issue (unchanged from Phase 0/1/2, now also covers Phase 3's code)
+
+- Still not compiled end-to-end in this sandbox — see `PROJECT_STATUS.md`
+  §Blocages. Phase 3 repeats Phase 2's joined-query pattern for `SpaceDao`
+  and adds a `popUpTo<AppRoute.Spaces>()` reified type-safe navigation call
+  that has not been checked against a real compiler.
+
 ### Added — Phase 2: social home feed
 
 - `core:model`: `Profile`, `Post`/`PostWithAuthor`, `Reaction`,

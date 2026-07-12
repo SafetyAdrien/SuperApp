@@ -8,10 +8,11 @@ import kotlinx.serialization.Serializable
  * hierarchy maps cleanly onto Navigation 3's `NavKey` model if/when that
  * library reaches a stable release (see docs/DECISIONS.md).
  *
- * Entity detail routes (page/task/conversation/canvas/space) are added as
- * the features that own those entities land — adding them before that would
- * be dead routes with no destination to navigate to. `PostDetail` and
- * `ComposePost` are the first, added in Phase 2 alongside the Post model.
+ * Entity detail routes (task/conversation/canvas) are added as the features
+ * that own those entities land — adding them before that would be dead
+ * routes with no destination to navigate to. `PostDetail`/`ComposePost`
+ * (Phase 2, Post model) and `CreateSpace`/`SpaceDetail`/`PageDetail`
+ * (Phase 3, Space/Page models) are the first entity/action routes.
  */
 sealed interface AppRoute {
     @Serializable
@@ -34,4 +35,13 @@ sealed interface AppRoute {
 
     @Serializable
     data class ComposePost(val replyToPostId: String? = null) : AppRoute
+
+    @Serializable
+    data object CreateSpace : AppRoute
+
+    @Serializable
+    data class SpaceDetail(val spaceId: String) : AppRoute
+
+    @Serializable
+    data class PageDetail(val pageId: String) : AppRoute
 }
