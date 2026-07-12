@@ -39,14 +39,20 @@ tooling):
     (shared entity references), never a direct module dependency.
 
 :core:domain     -> core:common, core:model
-:core:database   -> core:model
-:core:datastore  -> core:model
+:core:database   -> core:common, core:model, core:domain (implements its repository
+                    interfaces — see docs/DECISIONS.md; Hilt wires the binding, so
+                    :core:database only needs to be on :app's classpath, not on any
+                    :feature:*'s)
+:core:datastore  -> core:common, core:model
 :core:network    -> core:model
 :core:sync       -> core:common, core:model, core:database, core:network
 :core:notifications -> core:model, core:navigation
 :core:navigation -> (no core deps; route contracts only)
 :core:designsystem -> (no core deps; pure Compose UI)
-:core:testing    -> core:model (test fakes/utilities, consumed as testImplementation)
+:core:testing    -> core:common, core:model, core:domain (fake repositories,
+                    consumed as testImplementation — including by core:domain's
+                    own tests; this is not a cycle, see the comment in
+                    core/domain/build.gradle.kts)
 :core:common, :core:model -> no other module (leaf modules)
 
 :benchmark -> targets :app (com.android.test module, not a library)
@@ -74,14 +80,15 @@ in a module `build.gradle.kts` hardcodes a version string.
 ## State and errors
 
 Screens follow `data class XUiState(...)` / `sealed interface XAction` (or an
-equivalent typed pair) — see `feature/settings/.../SettingsUiState.kt` for the
-first real example. `AppError` (`core:common`) is the typed error hierarchy;
-raw exception messages never cross into the UI layer. Purely static
-placeholder screens (Home/Spaces/Messages for now) skip the ViewModel/UiState
-pair since they hold no state yet — one is introduced the moment a screen
-gets real content, not before.
+equivalent typed pair) — see `feature/settings/.../SettingsUiState.kt` and,
+since Phase 2, `feature/home/.../ComposePostUiState.kt` /
+`PostDetailUiState.kt`. `AppError` (`core:common`) is the typed error
+hierarchy; raw exception messages never cross into the UI layer. Purely
+static placeholder screens (Spaces/Messages for now) skip the ViewModel/
+UiState pair since they hold no state yet — one is introduced the moment a
+screen gets real content, not before.
 
-## Navigation shell (Phase 1)
+## Navigation shell (Phase 1) and entity routes (Phase 2+)
 
 `:app` composes the five-destination bottom navigation
 (`navigation/TopLevelDestination.kt`), an `AppState` holding the
@@ -90,17 +97,31 @@ gets real content, not before.
 via the `AppRoute` sealed hierarchy from `core:navigation`. The central
 "Créer" destination has no route — `ui/MainScreen.kt` opens
 `feature:create`'s `CreateSheetContent` in a `SuperBottomSheet` instead of
-navigating.
+navigating; only `CreateAction.NEW_POST` is wired to a real destination
+(`AppRoute.ComposePost`) so far, the other seven show a "bientôt disponible"
+snackbar.
+
+`AppRoute.PostDetail(postId)` and `AppRoute.ComposePost(replyToPostId?)` are
+the first entity/action routes, added in Phase 2 alongside the Post model.
+Screens read their route args via `SavedStateHandle.toRoute<AppRoute.X>()`
+(`feature/home/.../PostDetailViewModel.kt`, `ComposePostViewModel.kt`) rather
+than the NavHost passing raw string arguments — this is what "type-safe
+routing" buys: the ViewModel gets the actual typed `AppRoute` object, not a
+manually-parsed string.
 
 ## Why some directories only contain a placeholder file right now
 
 This repository is being built phase by phase (see `PROJECT_STATUS.md`).
 Phase 0 established the module graph, build system, and conventions. Phase 1
-adds the theme/design tokens, the core `Super*` components, the navigation
-shell, `core:datastore`'s real preferences repository, `core:common`'s error
-hierarchy and connectivity observer, and five real (if mostly empty) feature
-screens. `core:database`, `core:domain`, `core:network`, `core:sync`,
-`core:notifications`, `core:testing`, and the features not reachable from the
-bottom nav yet (onboarding, auth, editor, projects, messages' conversation
-detail, search, notifications, canvas) still contain only a placeholder file
-naming the phase that replaces it.
+added the theme/design tokens, the core `Super*` components, the navigation
+shell, `core:datastore`'s real preferences repository, and `core:common`'s
+error hierarchy and connectivity observer. Phase 2 added Profile/Post/
+Reaction end-to-end: `core:model`, `core:database` (entities, DAOs, the
+paginated feed query, demo seeding), `core:domain` (repositories, use
+cases), `core:testing` (fake repositories), and `feature:home`'s real feed,
+composer, and post-detail screens.
+
+`core:network`, `core:sync`, `core:notifications`, and the features not
+reachable from the bottom nav yet (onboarding, auth, editor, projects,
+messages' conversation detail, search, notifications, canvas) still contain
+only a placeholder file naming the phase that replaces it.

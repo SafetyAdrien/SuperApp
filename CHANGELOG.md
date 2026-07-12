@@ -5,6 +5,40 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Phase 2: social home feed
+
+- `core:model`: `Profile`, `Post`/`PostWithAuthor`, `Reaction`,
+  `EntityType`, `PostVisibility`.
+- `core:database`: Room entities/DAOs/`SuperAppDatabase` for the above, a
+  single joined-and-paginated feed query (`PostDao.pagingSource`), and
+  `DemoDataSeeder` (one demo profile + six posts, inserted only when the
+  database is empty).
+- `core:domain`: `ProfileRepository`/`PostRepository`/`ReactionRepository`
+  interfaces (implemented in `core:database`) and six use cases
+  (`ObserveFeedUseCase`, `ObservePostUseCase`, `ObserveRepliesUseCase`,
+  `CreatePostUseCase`, `ToggleReactionUseCase`,
+  `ObserveCurrentProfileUseCase`).
+- `core:testing`: fake repositories for the above, shared across modules.
+- `core:navigation`: `AppRoute.PostDetail`/`AppRoute.ComposePost` — the
+  first entity/action routes.
+- `core:designsystem`: `SuperAvatar`, `SuperTextField`.
+- `feature:home`: real paginated feed (Paging 3 + Compose), `PostCard`,
+  post composer with a character counter, post detail screen with replies,
+  reaction toggling. The "Créer" sheet's "Nouvelle publication" action now
+  opens the real composer.
+- `SuperAppApplication` now seeds demo data on startup via a new
+  `@ApplicationScope` `CoroutineScope` (`core:common`).
+- First tests: `CreatePostUseCaseTest`, `ToggleReactionUseCaseTest`
+  (core:domain), `PostDaoTest` (core:database, Robolectric + in-memory
+  Room).
+
+### Known issue (unchanged from Phase 0/1, now also covers Phase 2's code)
+
+- Still not compiled end-to-end in this sandbox — see `PROJECT_STATUS.md`
+  §Blocages. Phase 2 introduced the first non-trivial raw SQL and the
+  first Paging 3/SavedStateHandle-route wiring, so it carries the highest
+  compile-error risk of the three phases attempted so far.
+
 ### Added — Phase 1: foundations
 
 - `core:common`: `AppError`/`AppResult` typed-error hierarchy, `ThemeMode`/

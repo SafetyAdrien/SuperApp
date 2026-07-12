@@ -7,7 +7,9 @@ android {
 }
 
 dependencies {
+    api(project(":core:common"))
     api(project(":core:model"))
+    api(project(":core:domain"))
     api(libs.junit4)
     api(libs.truth)
     api(libs.turbine)

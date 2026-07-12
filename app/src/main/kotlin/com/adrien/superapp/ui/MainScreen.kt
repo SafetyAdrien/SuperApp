@@ -18,6 +18,8 @@ import com.adrien.superapp.core.designsystem.component.SuperBottomNavigation
 import com.adrien.superapp.core.designsystem.component.SuperBottomSheet
 import com.adrien.superapp.core.designsystem.component.SuperNavigationItem
 import com.adrien.superapp.core.designsystem.component.SuperOfflineBanner
+import com.adrien.superapp.core.navigation.AppRoute
+import com.adrien.superapp.feature.create.CreateAction
 import com.adrien.superapp.feature.create.CreateSheetContent
 import com.adrien.superapp.navigation.SuperAppNavHost
 import com.adrien.superapp.navigation.TopLevelDestination
@@ -66,8 +68,12 @@ fun MainScreen(
             CreateSheetContent(
                 onAction = { action ->
                     showCreateSheet = false
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("${action.label} — bientôt disponible")
+                    if (action == CreateAction.NEW_POST) {
+                        appState.navController.navigate(AppRoute.ComposePost())
+                    } else {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("${action.label} — bientôt disponible")
+                        }
                     }
                 },
             )

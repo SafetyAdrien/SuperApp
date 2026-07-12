@@ -19,10 +19,11 @@ import androidx.compose.ui.semantics.semantics
 import com.adrien.superapp.core.designsystem.theme.SuperAppTheme
 
 /**
- * Content of the central "Créer" bottom sheet. Every action currently just
- * reports which [CreateAction] was tapped — the actual create flows
- * (composer, page editor, task form, ...) land with their owning feature in
- * Phase 2+; wiring them here now would be a dead end with nothing to open.
+ * Content of the central "Créer" bottom sheet. This composable only reports
+ * which [CreateAction] was tapped — [MainScreen][com.adrien.superapp.ui]
+ * decides what happens next. As of Phase 2, [CreateAction.NEW_POST] opens
+ * the real composer; the other seven show a "bientôt disponible" snackbar
+ * since their owning feature hasn't landed yet.
  */
 @Composable
 fun CreateSheetContent(

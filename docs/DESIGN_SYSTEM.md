@@ -59,16 +59,22 @@ primary components).
 
 **Status**: tokens (`SuperAppColors`/`Typography`/`Shapes`/`Spacing`/
 `Elevation`/`Motion`) and `SuperAppTheme` are implemented, including Android
-12+ dynamic color behind the "use device dynamic color" preference. Ten
+12+ dynamic color behind the "use device dynamic color" preference. Twelve
 components are implemented with previews: `SuperTopAppBar`,
 `SuperBottomNavigation`/`SuperNavigationItem`, `SuperFloatingActionButton`,
-`SuperIconButton`, `SuperPrimaryButton`, `SuperBottomSheet`,
-`SuperEmptyState`, `SuperDivider`, `SuperLoadingIndicator`,
-`SuperOfflineBanner`. The remaining ~22 (`SuperSecondaryButton`,
-`SuperTertiaryButton`, `SuperTextField`, `SuperSearchField`, `SuperCard`,
-`SuperListItem`, `SuperAvatar`, `SuperAvatarGroup`, `SuperBadge`,
-`SuperChip`, `SuperTabs`, `SuperSegmentedControl`, `SuperDialog`,
-`SuperSnackbar`, `SuperTooltip`, `SuperErrorState`, `SuperShimmer`,
-`SuperContextMenu`, `SuperAttachmentPreview`, `SuperUserRow`,
+`SuperIconButton`, `SuperPrimaryButton`, `SuperTextField`, `SuperAvatar`,
+`SuperBottomSheet`, `SuperEmptyState`, `SuperDivider`,
+`SuperLoadingIndicator`, `SuperOfflineBanner`. `SuperAvatar` is initials-only
+for now (no Coil/image-loading dependency pulled in until a feature actually
+has an image URL to load — the demo profile's `avatarUrl` is always null).
+The remaining ~20 (`SuperSecondaryButton`, `SuperTertiaryButton`,
+`SuperSearchField`, `SuperCard`, `SuperListItem`, `SuperAvatarGroup`,
+`SuperBadge`, `SuperChip`, `SuperTabs`, `SuperSegmentedControl`,
+`SuperDialog`, `SuperSnackbar`, `SuperTooltip`, `SuperErrorState`,
+`SuperShimmer`, `SuperContextMenu`, `SuperAttachmentPreview`, `SuperUserRow`,
 `SuperEntityReference`, `SuperSyncIndicator`) are deferred to whichever
-phase first needs each one, rather than built speculatively.
+phase first needs each one, rather than built speculatively. Home's tabs use
+plain Material 3 `TabRow`/`Tab` and Settings uses plain `RadioButton`/
+`Switch` directly — `SuperTabs`/`SuperSegmentedControl` and a hypothetical
+`SuperSwitch` aren't built yet, and duplicating them for one screen each
+isn't worth it until a second caller shows up.

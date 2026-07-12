@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.adrien.superapp.feature.home"
 }
+
+dependencies {
+    implementation(libs.androidx.paging.compose)
+}

@@ -50,6 +50,15 @@ canvas attaches to a page, a message can deep-link to any entity via the
 notifications are modeled polymorphically rather than one table per parent
 type.
 
-**Status**: not yet implemented — `core/model` and `core/database` each
-currently contain only a placeholder file. Entities land incrementally,
-starting with Profile/Post/Reaction in Phase 2.
+**Status**: Profile, Post (+ `PostWithAuthor` read model), and Reaction are
+implemented in `core/model`, with Room entities/DAOs/mappers in
+`core/database` (`SuperAppDatabase`, schema export configured to
+`core/database/schemas/` — the directory only appears once KSP actually
+runs, which it hasn't in this sandbox; see `PROJECT_STATUS.md`). Reactions
+are stored polymorphically as designed
+(`entityType` + `entityId`), even though only `EntityType.POST` has a real
+producer so far. The feed query joins posts + author + correlated
+reaction/reply-count subqueries in one `PagingSource<Int, PostFeedRow>` —
+see `core/database/.../dao/PostDao.kt`. Remaining entities (Space,
+SpaceMember, Page, Block, Task, Conversation, Message, AppNotification,
+CanvasDocument, CanvasNode) land with their owning phase.
