@@ -16,8 +16,8 @@ All ids are string UUIDs.
   (`PRIVATE` / `INVITE_ONLY` / `PUBLIC`), timestamps.
 - **SpaceMember** — spaceId, profileId, role (`OWNER` / `ADMIN` / `EDITOR` /
   `MEMBER` / `GUEST`), joinedAt.
-- **Page** — id, spaceId, parentPageId, title, icon, coverUrl, createdBy,
-  timestamps, archivedAt.
+- **Page** — id, spaceId, parentPageId, title, icon, coverUrl, coverColorKey,
+  createdBy, timestamps, archivedAt.
 - **Block** — id, pageId, parentBlockId, type, position, content,
   properties, timestamps. Types: `PARAGRAPH`, `HEADING_1/2/3`,
   `BULLETED_LIST`, `NUMBERED_LIST`, `CHECKLIST`, `QUOTE`, `CALLOUT`,
@@ -89,3 +89,18 @@ requires shifting every row after it — see `docs/DECISIONS.md`.
 
 Remaining entities (Task, Conversation, Message, AppNotification,
 CanvasDocument, CanvasNode) land with their owning phase.
+
+**Retrofit (same session, after the fidelity requirement was added — see
+`docs/FIDELITY.md`)**: `Page` gained `coverColorKey`, a solid-color-cover
+token (one of `core:designsystem`'s `SuperAppCoverColors` keys) distinct
+from `coverUrl` (a real photo cover, still unused — needs an image loader
+this codebase doesn't pull in yet). `icon` (already in the model since
+Phase 3, unused until now) is a single emoji character, editable via
+`feature:editor`'s icon picker. `PageRepository` gained
+`observeRecentPages` (workspace-home "Récents", reactive on the current
+profile the same way `SpaceRepository.observeSpaces` is) and `deletePage`
+(cascades to that page's blocks via `BlockEntity`'s existing foreign key).
+`BlockRepository` gained `updateType`, which changes an existing block's
+`type` without touching its `position`/`content` — this is the "/" command's
+effect (see `PageDetailViewModel`), distinct from `createBlock` which only
+ever appends a new block.

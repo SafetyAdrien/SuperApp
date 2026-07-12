@@ -24,6 +24,7 @@ data class PageEntity(
     val title: String,
     val icon: String?,
     val coverUrl: String?,
+    val coverColorKey: String?,
     val createdBy: String,
     val createdAt: Long,
     val updatedAt: Long,

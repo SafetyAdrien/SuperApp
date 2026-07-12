@@ -1,7 +1,16 @@
 # Project status
 
-Last updated: 2026-07-12 (Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4,
-same sandboxed session, build still unverified — see "Blocages").
+Last updated: 2026-07-12 (Phase 0 + Phase 1 + Phase 2 + Phase 3 + Phase 4 +
+a fidelity retrofit pass, same sandboxed session, build still unverified —
+see "Blocages"). The brief was extended after Phase 4 with a standing
+cross-phase fidelity requirement (Notion/Bluesky/Discord/Figma structure
+and interaction fidelity, no asset/brand copying — see `docs/FIDELITY.md`)
+and a renumbered 15-phase plan (0–14) that doesn't map 1:1 onto the phase
+history below. Per explicit instruction, the retrofit was applied
+immediately to the already-built screens (workspace home, page editor)
+rather than deferred; the next phase to pick up is the new plan's Phase 4
+("Bases de données" — this repository's own Phase 0–4 history already
+covers the new plan's Phase 0–3).
 
 ## Fonctionnalités terminées
 
@@ -175,10 +184,54 @@ same sandboxed session, build still unverified — see "Blocages").
   one (the same problem the title field already had, solved the same way,
   documented inline in `PageDetailViewModel.kt`).
 
+### Retrofit — fidélité Notion/Bluesky (post-Phase 4, before the new Phase 4)
+
+- **`core:model`/`core:database`/`core:domain`**: `Page.coverColorKey`
+  (solid-color cover token); `PageRepository` gained
+  `observeRecentPages(limit)`, `updateIcon`, `updateCoverColor`,
+  `deletePage`; `BlockRepository` gained `updateType` (the "/" command's
+  effect). New use cases: `ObserveRecentPagesUseCase`,
+  `UpdatePageIconUseCase`, `UpdatePageCoverUseCase`, `DeletePageUseCase`,
+  `ChangeBlockTypeUseCase`. `FakePageRepository`/`FakeBlockRepository`
+  updated to match.
+- **`core:designsystem`**: `SuperAppCoverColors` (`theme/CoverColors.kt`) —
+  a 6-color named palette for page covers.
+- **`feature:spaces`**: `SpacesScreen` rebuilt as a Notion-like
+  collapsible-sections workspace home — `WorkspaceSectionHeader` (chevron
+  rotates on expand/collapse) + `EmptySectionRow` for sections with no
+  backing feature yet. Sections: Récents (real, `observeRecentPages`),
+  Favoris (placeholder — no favorite flag in the model), Espaces (real,
+  unchanged from Phase 3, "+" moved from a FAB into the section header),
+  Pages privées / Pages partagées / Modèles / Corbeille (placeholders — no
+  personal-page concept, no sharing, no templates, no soft-delete UI).
+  `PageListItem` now renders `Page.icon` (emoji) when set.
+- **`feature:editor`**: `PageDetailScreen` gained a real header —
+  `PageCoverBand` (tap to open a color-swatch picker, `PageCoverPickerContent`)
+  overlapped by `PageIconBadge` (tap to open an emoji picker,
+  `PageIconPickerContent`), a compact breadcrumb (the top bar now shows the
+  owning space's name instead of a static "Page" title), and a page-level
+  "⋮" menu (change icon / change cover / delete page — `DeletePageUseCase`,
+  navigates back via a `uiState.deleted` flag + `LaunchedEffect`). A real
+  "/" command: typing "/" at the end of a block's content opens the same
+  type-picker sheet used for inserts, but transforms *that* block's type in
+  place (`ChangeBlockTypeUseCase`) instead of inserting a new one. Real
+  long-press block selection: long-pressing a block's "⋮" handle
+  (`combinedClickable`, not the whole row — that would swallow taps meant
+  for the text field's cursor) toggles a highlighted `selected` state;
+  moving a selected block is still only the existing up/down actions, not
+  drag-and-drop (unchanged gap).
+- **`feature:home`**: top bar gained search/notification icon buttons
+  (both "bientôt disponible" snackbars — real features land in later
+  phases) per the Bluesky-like structure requirement; the feed itself was
+  already close to spec from Phase 2.
+- **Convention/design-system infra**: none beyond what Phase 4 already
+  added (`material-icons-extended` on every feature module already covers
+  this pass's new icons).
+
 ## Fonctionnalités en cours
 
-None open mid-implementation — every phase attempted this session reached a
-documented stopping point.
+None open mid-implementation — every phase (and this retrofit pass)
+attempted this session reached a documented stopping point.
 
 ## Fonctionnalités restantes
 
@@ -201,20 +254,27 @@ documented stopping point.
   neither of which exist). No nested sub-pages: `Page.parentPageId` exists
   in the model and `PageDao.observePagesForSpace` already filters to
   top-level pages only, but no screen creates or navigates into a child
-  page. No page icon/cover picker (the fields exist, always null). No
-  archiving/deleting a space or page.
+  page. No archiving/deleting a *space* (deleting a *page* is now real,
+  see the retrofit section above).
 - **Rest of Phase 4**: `IMAGE`, `FILE`, `LINK`, `TASK_REFERENCE`,
   `PAGE_REFERENCE`, `CANVAS_REFERENCE` block types are unbuilt (they need
   attachments/tasks/canvas/cross-page linking, none of which exist yet).
   No block nesting (`Block.parentBlockId` exists but nothing writes or
   reads it — no indentation/nested-list UI). No drag-and-drop reordering —
-  only up/down move actions. No changing an existing block's type after
-  creation (only choosable at insert time). No `language` picker for
-  `CODE` blocks (the field exists, always null). No markdown-style
-  shortcuts (typing `# ` to become a heading, `- ` for a bulleted list,
-  etc.) — blocks are created only via the type picker.
-- **Phases 5–11**: exactly as scoped in the project brief. `core:network`,
-  `core:sync`, `core:notifications`, and
+  only up/down move actions. No `language` picker for `CODE` blocks (the
+  field exists, always null). No markdown-style shortcuts (typing `# ` to
+  become a heading, `- ` for a bulleted list, etc.) — only the "/" command
+  and the explicit type picker create/transform blocks.
+- **Rest of the fidelity retrofit**: no real photo page cover (only the
+  6-color solid palette — `Page.coverUrl` stays unused until an image
+  loader is justified). No favorites, no "pages privées"/"pages
+  partagées" concept (would need a personal-page-outside-a-space model and
+  real multi-user sharing, neither of which exist), no templates, no
+  soft-delete/trash UI (`Page.archivedAt` exists but `deletePage` is a
+  hard delete, not a move-to-trash). Discord-like communities and
+  Figma-like canvas are entirely unbuilt — see `docs/FIDELITY.md`.
+- **Phases 5–14 (new plan) / 5–11 (old plan)**: exactly as scoped in the
+  project brief. `core:network`, `core:sync`, `core:notifications`, and
   `feature:{onboarding,auth,projects,search,notifications,canvas}` still
   contain only a placeholder file — see `ARCHITECTURE.md` §"Why some
   directories only contain a placeholder file right now".
@@ -254,8 +314,17 @@ Row/Column scope — reviewed carefully but not compiler-checked), and the
 `superapp.android.feature` convention plugin itself changed (added
 `material-icons-extended` to every feature module — see
 `docs/DECISIONS.md`), which affects every feature module's classpath, not
-just `feature:editor`'s. Treat all of it as "reviewed, not verified" until
-a real build runs.
+just `feature:editor`'s. The fidelity retrofit pass adds its own share:
+`BlockActionsMenu`'s `combinedClickable` needs `@OptIn(ExperimentalFoundationApi::class)`
+(first use of that experimental API in this codebase);
+`WorkspaceSectionHeader`'s `animateFloatAsState` is the first
+`androidx.compose.animation.core` usage outside `SuperOfflineBanner` (which
+uses the neighboring `AnimatedVisibility`, so the artifact is already on
+the classpath, but this specific API wasn't exercised before); several new
+icons (`Icons.Filled.InsertEmoticon`, `Image`, `Search`, `Notifications`)
+are unverified against the extended icon set the same way Phase 1–4's
+icons were. Treat all of it as "reviewed, not verified" until a real build
+runs.
 
 ### Exact commands run and their exact result (from the Phase 0 pass;
 reproduces identically today — the sandbox's network policy hasn't
@@ -300,12 +369,14 @@ None of this substitutes for an actual `./gradlew assembleDebug`.
 
 ```bash
 ./gradlew projects        # should list all 26 modules
-./gradlew assembleDebug   # first real compile of Phase 0 + 1 + 2 + 3 + 4
+./gradlew assembleDebug   # first real compile of Phase 0-4 + the retrofit
 ./gradlew test            # exercises CreatePostUseCaseTest,
                            # ToggleReactionUseCaseTest, PostDaoTest,
                            # CreateSpaceUseCaseTest, CreatePageUseCaseTest,
                            # SpaceDaoTest, CreateBlockUseCaseTest,
-                           # MoveBlockUseCaseTest, BlockDaoTest
+                           # MoveBlockUseCaseTest, BlockDaoTest,
+                           # DeletePageUseCaseTest, ObserveRecentPagesUseCaseTest,
+                           # ChangeBlockTypeUseCaseTest, PageDaoTest
 ./gradlew lint
 ```
 
@@ -326,7 +397,16 @@ Compose 2.9.8), the destructuring `items(uiState.blocks.zip(numberedIndices))`
 inside `BlockRow.kt`'s nested `Row`/`Box` branches (each must resolve
 against its own enclosing scope, not an outer one), and whether
 `ModalBottomSheet`/`DropdownMenu` still need `@OptIn(ExperimentalMaterial3Api::class)`
-at Compose BOM 2026.06.00. Then update this section and `CHANGELOG.md`.
+at Compose BOM 2026.06.00. From the retrofit pass: whether
+`combinedClickable`'s signature (`onClick`/`onLongClick`/`onClickLabel`/
+`onLongClickLabel`) still matches at this Compose BOM, whether
+`DropdownMenu` positions correctly as a sibling (not a wrapping `Box`) of
+its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
+(same sibling-adjacency pattern already used in `BlockRow.kt`'s
+`BlockActionsMenu`, unverified there too), and whether `LazyVerticalGrid`
+(used in the new icon/cover pickers) needs any import beyond
+`androidx.compose.foundation.lazy.grid.*`. Then update this section and
+`CHANGELOG.md`.
 
 ## Dette technique
 
@@ -365,6 +445,17 @@ at Compose BOM 2026.06.00. Then update this section and `CHANGELOG.md`.
   concurrently.
 - No drag-and-drop block reordering (only up/down move actions) — see
   "Fonctionnalités restantes" above.
+- No unit test for `SpacesViewModel`'s new `combine` (recent pages +
+  spaces) or `PageDetailViewModel`'s icon/cover/delete flows yet — same
+  "ViewModels are thin, use-case tests cover the logic" reasoning as
+  above, but noted separately since this retrofit added real ViewModel
+  logic (the `combine`, the `deleted`-flag navigation trigger) that a
+  Turbine test would catch faster than a manual review.
+- `deletePage` is a hard delete (cascades to blocks via the existing FK),
+  not a move-to-trash — `Page.archivedAt` exists on the model but nothing
+  sets it. The "Corbeille" section in the workspace home is therefore a
+  placeholder, not a real trash view, even though the underlying column
+  exists.
 
 ## TODO justifiés
 
@@ -378,15 +469,19 @@ sheet doesn't have a flow for yet — creating a page today only happens from
 inside `SpaceDetailScreen`). The six deferred `BlockType` values
 (`IMAGE`/`FILE`/`LINK`/`TASK_REFERENCE`/`PAGE_REFERENCE`/
 `CANVAS_REFERENCE`) simply don't appear in `BlockTypePickerContent`'s
-option list — not silently broken, just not offered yet.
+option list — not silently broken, just not offered yet. The workspace
+home's Favoris/Pages privées/Pages partagées/Modèles/Corbeille sections
+render an explicit "Bientôt disponible" row rather than an empty list —
+distinguishing "nothing here yet" (real feature, no data) from "this isn't
+built" (`docs/FIDELITY.md`'s "no silent placeholders" rule).
 
 ## Dernier build exécuté
 
 `gradle projects` (system Gradle 8.14.3) on 2026-07-12 — failed at AGP
 plugin resolution (network blocker above), not evaluated further. Not
-re-attempted after Phase 1, Phase 2, Phase 3, or Phase 4's changes since the
-blocker is unchanged; see "What was done instead" above for the static
-checks that were run each pass.
+re-attempted after Phase 1, Phase 2, Phase 3, Phase 4, or the retrofit
+pass's changes since the blocker is unchanged; see "What was done instead"
+above for the static checks that were run each pass.
 
 ## Derniers tests exécutés
 
@@ -398,10 +493,14 @@ Room, core:database); from Phase 3, `CreateSpaceUseCaseTest`,
 `CreatePageUseCaseTest` (pure JVM, fakes only, core:domain) and
 `SpaceDaoTest` (Robolectric + in-memory Room, core:database — covers the
 joined member/page-count query, including the "viewer never joined this
-space" exclusion case); and from Phase 4, `CreateBlockUseCaseTest` (gap-based
+space" exclusion case); from Phase 4, `CreateBlockUseCaseTest` (gap-based
 position math: first block, insert-between, append-after-last),
 `MoveBlockUseCaseTest` (swap up/down, no-op at either edge — pure JVM,
 fakes only, core:domain), and `BlockDaoTest` (Robolectric + in-memory Room,
-core:database — ordering by position, delete, content/checked update).
-These are the first tests to actually exercise in a networked environment,
-since they're the lowest-risk/highest-value ones to confirm first.
+core:database — ordering by position, delete, content/checked update); and
+from the retrofit pass, `DeletePageUseCaseTest`, `ObserveRecentPagesUseCaseTest`,
+`ChangeBlockTypeUseCaseTest` (pure JVM, fakes only, core:domain), and
+`PageDaoTest` (Robolectric + in-memory Room, core:database — recent-pages
+ordering, the "viewer never joined" exclusion case, delete). These are the
+first tests to actually exercise in a networked environment, since they're
+the lowest-risk/highest-value ones to confirm first.

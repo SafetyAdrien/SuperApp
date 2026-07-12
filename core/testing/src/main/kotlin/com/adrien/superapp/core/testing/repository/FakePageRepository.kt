@@ -25,6 +25,10 @@ class FakePageRepository : PageRepository {
         list.filter { it.spaceId == spaceId && it.parentPageId == null }
     }
 
+    override fun observeRecentPages(limit: Int) = pages.map { list ->
+        list.sortedByDescending { it.updatedAt }.take(limit)
+    }
+
     override fun observePage(pageId: String) = pages.map { list -> list.firstOrNull { it.id == pageId } }
 
     override suspend fun createPage(spaceId: String, title: String, createdBy: String): AppResult<Page> {
@@ -47,6 +51,27 @@ class FakePageRepository : PageRepository {
         if (shouldFail) return AppResult.Failure(AppError.Unknown())
 
         pages.value = pages.value.map { if (it.id == pageId) it.copy(title = title) else it }
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun updateIcon(pageId: String, icon: String?): AppResult<Unit> {
+        if (shouldFail) return AppResult.Failure(AppError.Unknown())
+
+        pages.value = pages.value.map { if (it.id == pageId) it.copy(icon = icon) else it }
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun updateCoverColor(pageId: String, coverColorKey: String?): AppResult<Unit> {
+        if (shouldFail) return AppResult.Failure(AppError.Unknown())
+
+        pages.value = pages.value.map { if (it.id == pageId) it.copy(coverColorKey = coverColorKey) else it }
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun deletePage(pageId: String): AppResult<Unit> {
+        if (shouldFail) return AppResult.Failure(AppError.Unknown())
+
+        pages.value = pages.value.filterNot { it.id == pageId }
         return AppResult.Success(Unit)
     }
 }

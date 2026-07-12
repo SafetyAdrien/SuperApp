@@ -1,11 +1,14 @@
 package com.adrien.superapp.feature.editor
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -28,29 +31,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
 import com.adrien.superapp.core.designsystem.component.SuperDivider
-import com.adrien.superapp.core.designsystem.component.SuperIconButton
 import com.adrien.superapp.core.designsystem.component.SuperTextField
 import com.adrien.superapp.core.designsystem.theme.SuperAppShapes
 import com.adrien.superapp.core.designsystem.theme.SuperAppTheme
 import com.adrien.superapp.core.model.Block
 import com.adrien.superapp.core.model.BlockType
 
+/**
+ * `selected` is a real, tap-driven "selection" state (highlighted background, toggled via a
+ * long-press on the block's action handle) — it is not fake. What it does not do yet is
+ * drag-and-drop reordering; moving a selected block still only happens via the up/down actions
+ * in [BlockActionsMenu], see PROJECT_STATUS.md.
+ */
 @Composable
 fun BlockRow(
     block: Block,
     numberedIndex: Int?,
+    selected: Boolean,
     onContentChange: (String) -> Unit,
     onToggleChecked: () -> Unit,
     onInsertBelow: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .background(if (selected) SuperAppTheme.extendedColors.info.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface)
             .padding(
                 horizontal = SuperAppTheme.spacing.screenHorizontal,
                 vertical = SuperAppTheme.spacing.space4,
@@ -96,6 +108,7 @@ fun BlockRow(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onDelete = onDelete,
+            onLongPress = onLongPress,
         )
     }
 }
@@ -144,21 +157,36 @@ private fun BlockContentField(
     }
 }
 
+/**
+ * The "⋮" handle also carries the long-press gesture (not the whole row, which would otherwise
+ * intercept taps meant for the text field's cursor placement) — short tap opens the menu, a
+ * long-press toggles the block's [BlockRow.selected] highlight.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BlockActionsMenu(
     onInsertBelow: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit,
+    onLongPress: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Column {
-        SuperIconButton(
-            icon = Icons.Filled.MoreVert,
-            contentDescription = "Actions du bloc",
-            onClick = { expanded = true },
-        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .combinedClickable(
+                    onClick = { expanded = true },
+                    onLongClick = onLongPress,
+                    onClickLabel = "Actions du bloc",
+                    onLongClickLabel = "Sélectionner le bloc",
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = null)
+        }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text("Insérer en dessous") },

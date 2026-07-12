@@ -16,6 +16,9 @@ interface BlockRepository {
 
     suspend fun updateContent(blockId: String, content: String): AppResult<Unit>
 
+    /** Transforms an existing block's type in place — the "/" command's effect. */
+    suspend fun updateType(blockId: String, type: BlockType): AppResult<Unit>
+
     suspend fun toggleChecked(blockId: String): AppResult<Unit>
 
     suspend fun deleteBlock(blockId: String): AppResult<Unit>

@@ -2,8 +2,11 @@
 
 Lives in `core:designsystem`. Material 3 is the technical foundation; the
 visual identity is its own (calm productivity-tool structure + simple
-social interactions + moderate density), not generic Material 3 and not a
-clone of Notion/Bluesky/Discord/Figma.
+social interactions + moderate density), not generic Material 3. Since
+the fidelity requirement was added (`docs/FIDELITY.md`), screens are
+expected to closely follow Notion Mobile/Bluesky/Discord/Figma's
+*interaction and structure* — but never their logos, brand names,
+proprietary icons/illustrations, copy, or exact pixel styling.
 
 No screen-level composable ever hardcodes a hex color, spacing dp, corner
 radius, or animation duration — always through `SuperAppTheme` /
@@ -87,3 +90,14 @@ action menu (`SuperContextMenu` isn't built yet either) and extended
 `MaterialTheme.typography.bodyLarge`) so headings/code blocks can render at
 their own type scale through the same component instead of a one-off
 `BasicTextField`.
+
+**Fidelity retrofit**: added `SuperAppCoverColors` (`theme/CoverColors.kt`)
+— a small named palette (amber/rose/mint/sky/lavender/stone) for Notion-like
+solid-color page covers, so `feature:editor`'s cover picker never hardcodes
+a hex value outside the design-system layer. The workspace home's
+collapsible sections (`feature:spaces`) and the page header's cover/icon
+affordances (`feature:editor`) are still plain Material3 primitives
+(`Box`/`background`/`clip`, `LazyVerticalGrid`) composed in the feature
+modules rather than new `Super*` components — each is used by exactly one
+screen so far, same "wait for a second caller" policy as everywhere else
+in this document.

@@ -5,6 +5,38 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — Fidelity retrofit: Notion-like workspace home and page header
+
+The brief was extended with a standing requirement for strong structural/
+interaction fidelity to Notion Mobile, Bluesky, Discord, and Figma (no
+asset/branding copying) — see `docs/FIDELITY.md`. Applied immediately to
+the already-built screens rather than deferred:
+
+- `core:model`/`core:database`/`core:domain`: `Page.coverColorKey`;
+  `PageRepository` gained `observeRecentPages`, `updateIcon`,
+  `updateCoverColor`, `deletePage`; `BlockRepository` gained `updateType`.
+  New use cases: `ObserveRecentPagesUseCase`, `UpdatePageIconUseCase`,
+  `UpdatePageCoverUseCase`, `DeletePageUseCase`, `ChangeBlockTypeUseCase`.
+- `core:designsystem`: `SuperAppCoverColors`, a 6-color named palette for
+  page covers.
+- `feature:spaces`: `SpacesScreen` rebuilt as a collapsible-sections
+  workspace home (Récents/Favoris/Espaces/Pages privées/Pages partagées/
+  Modèles/Corbeille); `PageListItem` renders a page's emoji icon.
+- `feature:editor`: `PageDetailScreen` gained a cover-color band, an icon
+  badge, a compact breadcrumb, a page-level "⋮" menu (icon/cover/delete),
+  a real "/" command that transforms the current block's type in place,
+  and long-press block selection (highlighted state, not drag-and-drop).
+- `feature:home`: top bar gained search/notification icon buttons.
+- New tests: `DeletePageUseCaseTest`, `ObserveRecentPagesUseCaseTest`,
+  `ChangeBlockTypeUseCaseTest` (core:domain), `PageDaoTest` (core:database).
+
+### Known issue (unchanged from Phase 0–4, now also covers the retrofit)
+
+- Still not compiled end-to-end in this sandbox — see `PROJECT_STATUS.md`
+  §Blocages. First uses of `combinedClickable`
+  (`@OptIn(ExperimentalFoundationApi::class)`) and `animateFloatAsState`
+  in this codebase, plus several more unverified extended-icon references.
+
 ### Added — Phase 4: block editor
 
 - `core:model`: `BlockType` (11 of the brief's 15 types; 6 deferred — see

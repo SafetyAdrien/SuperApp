@@ -53,6 +53,14 @@ class BlockRepositoryImpl @Inject constructor(
         AppResult.Failure(AppError.Unknown(t))
     }
 
+    override suspend fun updateType(blockId: String, type: BlockType): AppResult<Unit> = try {
+        val existing = blockDao.get(blockId) ?: return AppResult.Failure(AppError.NotFound)
+        blockDao.update(existing.copy(type = type.name, updatedAt = System.currentTimeMillis()))
+        AppResult.Success(Unit)
+    } catch (t: Throwable) {
+        AppResult.Failure(AppError.Unknown(t))
+    }
+
     override suspend fun toggleChecked(blockId: String): AppResult<Unit> = try {
         val existing = blockDao.get(blockId) ?: return AppResult.Failure(AppError.NotFound)
         blockDao.update(existing.copy(checked = !existing.checked, updatedAt = System.currentTimeMillis()))

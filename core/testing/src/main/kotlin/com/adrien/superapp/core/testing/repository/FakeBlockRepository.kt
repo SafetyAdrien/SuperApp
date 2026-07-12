@@ -65,6 +65,12 @@ class FakeBlockRepository : BlockRepository {
         return AppResult.Success(Unit)
     }
 
+    override suspend fun updateType(blockId: String, type: BlockType): AppResult<Unit> {
+        if (shouldFail) return AppResult.Failure(AppError.Unknown())
+        blocks.value = blocks.value.map { if (it.id == blockId) it.copy(type = type) else it }
+        return AppResult.Success(Unit)
+    }
+
     override suspend fun toggleChecked(blockId: String): AppResult<Unit> {
         if (shouldFail) return AppResult.Failure(AppError.Unknown())
         blocks.value = blocks.value.map { if (it.id == blockId) it.copy(checked = !it.checked) else it }

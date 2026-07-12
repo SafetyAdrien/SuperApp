@@ -18,6 +18,14 @@ interface PageDao {
     )
     fun observePagesForSpace(spaceId: String): Flow<List<PageEntity>>
 
+    /** Most recently updated pages across every space the profile is a member of — the workspace home's "Récents". */
+    @Query(
+        "SELECT p.* FROM pages p INNER JOIN space_members m ON m.spaceId = p.spaceId " +
+            "WHERE m.profileId = :profileId AND p.archivedAt IS NULL " +
+            "ORDER BY p.updatedAt DESC LIMIT :limit",
+    )
+    fun observeRecentPagesForMember(profileId: String, limit: Int): Flow<List<PageEntity>>
+
     @Query("SELECT * FROM pages WHERE id = :pageId")
     fun observePage(pageId: String): Flow<PageEntity?>
 
@@ -29,6 +37,9 @@ interface PageDao {
 
     @Update
     suspend fun update(page: PageEntity)
+
+    @Query("DELETE FROM pages WHERE id = :pageId")
+    suspend fun delete(pageId: String)
 
     @Query("SELECT COUNT(*) FROM pages")
     suspend fun count(): Int

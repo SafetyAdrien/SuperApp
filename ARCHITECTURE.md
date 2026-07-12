@@ -147,3 +147,27 @@ equivalent (a bottom sheet, `BlockTypePickerContent`, reusing the same
 reachable from the bottom nav yet (onboarding, auth, projects, messages'
 conversation detail, search, notifications, canvas) still contain only a
 placeholder file naming the phase that replaces it.
+
+## Fidelity requirement (retrofit, same session as Phase 4)
+
+The brief now requires strong interaction/structure fidelity to Notion
+Mobile (workspace/pages), Bluesky Mobile (feed), Discord (communities —
+future phase), and Figma (canvas — future phase), without copying any
+reference app's assets/branding — see `docs/FIDELITY.md` for the full
+requirement and validity criteria. This was retrofitted into the
+already-built Phase 3/4 screens rather than deferred: `feature:spaces`'s
+`SpacesScreen` became a Notion-like collapsible-sections workspace home
+(Récents/Favoris/Espaces/Pages privées/Pages partagées/Modèles/Corbeille),
+and `feature:editor`'s `PageDetailScreen` gained a cover/icon header, a
+compact breadcrumb, a page-level "⋮" menu, a real "/" command (transforms
+the current block via `ChangeBlockTypeUseCase`, new this pass), and
+long-press block selection. `feature:home`'s Bluesky-like feed already
+matched the required structure and only needed top-bar search/
+notification affordances added.
+
+New in `core:domain`/`core:database` for this pass: `PageRepository`
+gained `observeRecentPages`/`updateIcon`/`updateCoverColor`/`deletePage`
+(same reactive-on-current-profile pattern as `SpaceRepository.observeSpaces`
+for the recent-pages query); `BlockRepository` gained `updateType` (the
+"/" command's effect — change an existing block's type in place, distinct
+from `createBlock` which only ever appends a new one).

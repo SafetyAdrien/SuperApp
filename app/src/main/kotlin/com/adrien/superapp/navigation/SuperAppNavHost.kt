@@ -38,6 +38,7 @@ fun SuperAppNavHost(
             SpacesScreen(
                 onSpaceClick = { spaceId -> navController.navigate(AppRoute.SpaceDetail(spaceId)) },
                 onCreateSpaceClick = { navController.navigate(AppRoute.CreateSpace) },
+                onPageClick = { pageId -> navController.navigate(AppRoute.PageDetail(pageId)) },
             )
         }
         composable<AppRoute.CreateSpace> {

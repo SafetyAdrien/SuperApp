@@ -1,6 +1,11 @@
 package com.adrien.superapp.core.model
 
-/** Block content (the page's actual body) lands in the phase that adds `feature:editor`'s block editor. */
+/**
+ * `icon` is a single emoji character. `coverColorKey` names one of a small built-in palette
+ * (see `feature:editor`'s cover picker) — a real photo/image cover (`coverUrl`) is a later phase,
+ * since it needs an image loader (Coil) this codebase doesn't pull in until a screen actually
+ * loads a remote image.
+ */
 data class Page(
     val id: String,
     val spaceId: String,
@@ -8,6 +13,7 @@ data class Page(
     val title: String,
     val icon: String? = null,
     val coverUrl: String? = null,
+    val coverColorKey: String? = null,
     val createdBy: String,
     val createdAt: Long,
     val updatedAt: Long,

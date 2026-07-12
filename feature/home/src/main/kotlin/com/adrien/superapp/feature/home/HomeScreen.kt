@@ -9,6 +9,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -16,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +35,7 @@ import com.adrien.superapp.core.designsystem.component.SuperFloatingActionButton
 import com.adrien.superapp.core.designsystem.component.SuperLoadingIndicator
 import com.adrien.superapp.core.designsystem.component.SuperTopAppBar
 import com.adrien.superapp.core.designsystem.theme.SuperAppTheme
+import kotlinx.coroutines.launch
 
 private val TabTitles = listOf("Pour vous", "Abonnements", "Activité")
 
@@ -39,10 +47,30 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SuperTopAppBar(title = "Super App")
+            SuperTopAppBar(
+                title = "Super App",
+                actions = {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Recherche — bientôt disponible") }
+                        },
+                    ) {
+                        Icon(imageVector = Icons.Filled.Search, contentDescription = "Rechercher")
+                    }
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Notifications — bientôt disponible") }
+                        },
+                    ) {
+                        Icon(imageVector = Icons.Filled.Notifications, contentDescription = "Notifications")
+                    }
+                },
+            )
             TabRow(selectedTabIndex = selectedTab) {
                 TabTitles.forEachIndexed { index, title ->
                     Tab(
@@ -73,6 +101,13 @@ fun HomeScreen(
             onClick = onComposeClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
+                .padding(SuperAppTheme.spacing.space16),
+        )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
                 .padding(SuperAppTheme.spacing.space16),
         )
     }

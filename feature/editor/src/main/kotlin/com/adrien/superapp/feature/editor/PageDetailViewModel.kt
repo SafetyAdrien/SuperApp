@@ -5,20 +5,26 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.adrien.superapp.core.domain.repository.MoveDirection
+import com.adrien.superapp.core.domain.usecase.ChangeBlockTypeUseCase
 import com.adrien.superapp.core.domain.usecase.CreateBlockUseCase
 import com.adrien.superapp.core.domain.usecase.DeleteBlockUseCase
+import com.adrien.superapp.core.domain.usecase.DeletePageUseCase
 import com.adrien.superapp.core.domain.usecase.MoveBlockUseCase
 import com.adrien.superapp.core.domain.usecase.ObserveBlocksUseCase
 import com.adrien.superapp.core.domain.usecase.ObservePageUseCase
+import com.adrien.superapp.core.domain.usecase.ObserveSpaceUseCase
 import com.adrien.superapp.core.domain.usecase.RenamePageUseCase
 import com.adrien.superapp.core.domain.usecase.ToggleBlockCheckedUseCase
 import com.adrien.superapp.core.domain.usecase.UpdateBlockContentUseCase
+import com.adrien.superapp.core.domain.usecase.UpdatePageCoverUseCase
+import com.adrien.superapp.core.domain.usecase.UpdatePageIconUseCase
 import com.adrien.superapp.core.model.BlockType
 import com.adrien.superapp.core.navigation.AppRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,9 +34,14 @@ class PageDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     observePageUseCase: ObservePageUseCase,
     observeBlocksUseCase: ObserveBlocksUseCase,
+    private val observeSpaceUseCase: ObserveSpaceUseCase,
     private val renamePageUseCase: RenamePageUseCase,
+    private val updatePageIconUseCase: UpdatePageIconUseCase,
+    private val updatePageCoverUseCase: UpdatePageCoverUseCase,
+    private val deletePageUseCase: DeletePageUseCase,
     private val createBlockUseCase: CreateBlockUseCase,
     private val updateBlockContentUseCase: UpdateBlockContentUseCase,
+    private val changeBlockTypeUseCase: ChangeBlockTypeUseCase,
     private val toggleBlockCheckedUseCase: ToggleBlockCheckedUseCase,
     private val deleteBlockUseCase: DeleteBlockUseCase,
     private val moveBlockUseCase: MoveBlockUseCase,
@@ -41,8 +52,14 @@ class PageDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PageDetailUiState())
     val uiState: StateFlow<PageDetailUiState> = _uiState.asStateFlow()
 
-    /** Only the first load seeds [PageDetailUiState.title] — later emissions are our own writes echoing back. */
+    /**
+     * Only the first load seeds [PageDetailUiState.title] — later emissions are our own writes
+     * echoing back. `icon`/`coverColorKey` don't need this guard: they only ever change via a
+     * single atomic bottom-sheet pick, never character-by-character, so always mirroring the DB
+     * value is both safe and desirable.
+     */
     private var titleInitialized = false
+    private var spaceNameFetched = false
 
     /**
      * Adopts the DB's block list membership/order/type/checked (all set by single atomic
@@ -55,13 +72,25 @@ class PageDetailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             observePageUseCase(route.pageId).collect { page ->
-                when {
-                    page == null -> _uiState.update { it.copy(isLoading = false, notFound = true) }
-                    !titleInitialized -> {
-                        titleInitialized = true
-                        _uiState.update { it.copy(isLoading = false, title = page.title) }
-                    }
-                    else -> Unit
+                if (page == null) {
+                    _uiState.update { it.copy(isLoading = false, notFound = true) }
+                    return@collect
+                }
+
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        title = if (titleInitialized) state.title else page.title,
+                        icon = page.icon,
+                        coverColorKey = page.coverColorKey,
+                    )
+                }
+                titleInitialized = true
+
+                if (!spaceNameFetched) {
+                    spaceNameFetched = true
+                    val space = observeSpaceUseCase(page.spaceId).firstOrNull()
+                    _uiState.update { it.copy(spaceName = space?.space?.name) }
                 }
             }
         }
@@ -86,8 +115,27 @@ class PageDetailViewModel @Inject constructor(
         viewModelScope.launch { renamePageUseCase(route.pageId, title) }
     }
 
+    fun onIconSelected(icon: String?) {
+        viewModelScope.launch { updatePageIconUseCase(route.pageId, icon) }
+    }
+
+    fun onCoverColorSelected(coverColorKey: String?) {
+        viewModelScope.launch { updatePageCoverUseCase(route.pageId, coverColorKey) }
+    }
+
+    fun onDeletePage() {
+        viewModelScope.launch {
+            deletePageUseCase(route.pageId)
+            _uiState.update { it.copy(deleted = true) }
+        }
+    }
+
     fun onInsertBlock(afterBlockId: String?, type: BlockType) {
         viewModelScope.launch { createBlockUseCase(pageId = route.pageId, afterBlockId = afterBlockId, type = type) }
+    }
+
+    fun onChangeBlockType(blockId: String, type: BlockType) {
+        viewModelScope.launch { changeBlockTypeUseCase(blockId, type) }
     }
 
     fun onBlockContentChanged(blockId: String, content: String) {

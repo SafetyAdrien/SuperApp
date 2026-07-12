@@ -100,17 +100,18 @@ class DemoDataSeeder @Inject constructor(
             },
         )
 
-        val demoPageTitles = listOf("Bienvenue", "Idées")
+        val demoPages = listOf("Bienvenue" to "👋", "Idées" to "💡")
         val pageEntities = spaceEntities.flatMap { space ->
-            demoPageTitles.mapIndexed { index, title ->
-                val createdAt = now - (demoPageTitles.size - index) * 30_000L
+            demoPages.mapIndexed { index, (title, icon) ->
+                val createdAt = now - (demoPages.size - index) * 30_000L
                 PageEntity(
                     id = UUID.randomUUID().toString(),
                     spaceId = space.id,
                     parentPageId = null,
                     title = title,
-                    icon = null,
+                    icon = icon,
                     coverUrl = null,
+                    coverColorKey = if (index == 0) "amber" else null,
                     createdBy = demoProfile.id,
                     createdAt = createdAt,
                     updatedAt = createdAt,

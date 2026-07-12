@@ -52,6 +52,7 @@ class BlockDaoTest {
         title = "Page",
         icon = null,
         coverUrl = null,
+        coverColorKey = null,
         createdBy = owner.id,
         createdAt = 0,
         updatedAt = 0,

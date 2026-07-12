@@ -4,6 +4,61 @@ Short ADRs. Newest first.
 
 ---
 
+## Solid-color page covers now, real photo covers later
+
+**Contexte** — The fidelity requirement (`docs/FIDELITY.md`) asks for
+Notion-like page covers ("ajoutée ou supprimée"). A real photo cover needs
+picking an image (Storage Access Framework / Android photo picker) and
+loading it (Coil), neither of which any screen has needed yet — this
+codebase deliberately hasn't pulled in an image-loading dependency before
+now (see `SuperAvatar`'s doc comment, `docs/DESIGN_SYSTEM.md`).
+
+**Décision** — Add `Page.coverColorKey`, a key into a small fixed palette
+(`core:designsystem`'s `SuperAppCoverColors`), picked from a bottom sheet
+grid. `Page.coverUrl` (already in the model since Phase 3) stays reserved
+for a real image cover.
+
+**Raisons** — Ships the actual user-facing behavior (a page can have a
+visually distinct cover) without a new dependency, a permission
+(`READ_MEDIA_IMAGES`), or unverifiable image-loading code in a sandbox
+that cannot compile-test it. Matches Notion's own onboarding UX, which
+also offers solid/gradient covers before a photo library integration.
+
+**Conséquences** — `coverUrl` remains a dead field until a phase adds real
+image covers; `PageCoverBand`/`PageCoverPickerContent` will need a second
+branch (`coverUrl != null`) at that point.
+
+---
+
+## Slash command transforms the current block; doesn't insert a new one
+
+**Contexte** — The fidelity requirement's Notion-like page navigation asks
+for a "/" command. The existing "insert a block" flow
+(`CreateBlockUseCase`) always appends a *new* block after a given one —
+using it for "/" would leave a stray empty paragraph behind the newly
+typed block, which is not how Notion's own "/" behaves (it transforms the
+line being typed).
+
+**Décision** — Add `BlockRepository.updateType` / `ChangeBlockTypeUseCase`,
+which changes an existing block's `type` in place (keeping its `position`
+and `content`). `PageDetailScreen` detects a trailing "/" character typed
+into a block, strips it, and opens the same type-picker sheet used for
+inserts — but wires its result to `onChangeBlockType` instead of
+`onInsertBlock` when triggered this way.
+
+**Raisons** — Reusing one repository method for two different user intents
+(insert vs. transform) would need a magic "replace in place" flag threaded
+through `createBlock`; a second, single-purpose method is more honest
+about what's actually happening and simpler to test in isolation (see
+`ChangeBlockTypeUseCaseTest`).
+
+**Conséquences** — None yet; this is the first Phase 4+ use case that
+mutates a block's type after creation, opening the door to a future
+"change type" entry in the block's action menu too (not added this pass —
+no caller needs it besides the slash command yet).
+
+---
+
 ## Block position is a gap-based `Long`, not a shifted integer index
 
 **Contexte** — Phase 4's block editor needs to insert a block between any

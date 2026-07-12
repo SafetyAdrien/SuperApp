@@ -106,6 +106,7 @@ class SpaceDaoTest {
         title = "Page $id",
         icon = null,
         coverUrl = null,
+        coverColorKey = null,
         createdBy = owner.id,
         createdAt = 0,
         updatedAt = 0,
