@@ -20,6 +20,10 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 add("implementation", project(":core:designsystem"))
                 add("implementation", project(":core:navigation"))
                 add("implementation", project(":core:domain"))
+                // Preferences are simple, reactive settings rather than complex
+                // business logic, so features read them directly instead of
+                // through a core:domain use-case indirection. See docs/DECISIONS.md.
+                add("implementation", project(":core:datastore"))
 
                 add("implementation", libs.findLibrary("androidx-lifecycle-runtime-compose").get())
                 add("implementation", libs.findLibrary("androidx-lifecycle-viewmodel-compose").get())

@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.superapp.android.library)
+    alias(libs.plugins.superapp.android.hilt)
     alias(libs.plugins.superapp.android.testing)
 }
 

@@ -57,5 +57,18 @@ states, loading state where relevant, dark-theme support, accessibility
 semantics, and at least one `@Preview` (plus a dark `@Preview` for the
 primary components).
 
-**Status**: not yet implemented — `core/designsystem` currently contains
-only a placeholder file. This is Phase 1 work.
+**Status**: tokens (`SuperAppColors`/`Typography`/`Shapes`/`Spacing`/
+`Elevation`/`Motion`) and `SuperAppTheme` are implemented, including Android
+12+ dynamic color behind the "use device dynamic color" preference. Ten
+components are implemented with previews: `SuperTopAppBar`,
+`SuperBottomNavigation`/`SuperNavigationItem`, `SuperFloatingActionButton`,
+`SuperIconButton`, `SuperPrimaryButton`, `SuperBottomSheet`,
+`SuperEmptyState`, `SuperDivider`, `SuperLoadingIndicator`,
+`SuperOfflineBanner`. The remaining ~22 (`SuperSecondaryButton`,
+`SuperTertiaryButton`, `SuperTextField`, `SuperSearchField`, `SuperCard`,
+`SuperListItem`, `SuperAvatar`, `SuperAvatarGroup`, `SuperBadge`,
+`SuperChip`, `SuperTabs`, `SuperSegmentedControl`, `SuperDialog`,
+`SuperSnackbar`, `SuperTooltip`, `SuperErrorState`, `SuperShimmer`,
+`SuperContextMenu`, `SuperAttachmentPreview`, `SuperUserRow`,
+`SuperEntityReference`, `SuperSyncIndicator`) are deferred to whichever
+phase first needs each one, rather than built speculatively.

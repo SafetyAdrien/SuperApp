@@ -4,6 +4,33 @@ Short ADRs. Newest first.
 
 ---
 
+## Feature modules depend on `core:datastore` directly, not only through `core:domain`
+
+**Contexte** — `ARCHITECTURE.md` documents that `feature:*` modules reach
+data through `core:domain`'s use cases/repository interfaces. Phase 1 needed
+`feature:settings` to read/write theme + dynamic-color preferences, which
+live in `core:datastore`.
+
+**Décision** — Add `core:datastore` to the `superapp.android.feature`
+convention plugin's dependency set, alongside `core:domain`, and define
+`UserPreferencesRepository` directly in `core:datastore` rather than behind
+a separate interface-in-`core:domain`/impl-in-`core:datastore` split.
+
+**Raisons** — User preferences are a thin, reactive read/write surface with
+no real business logic (no validation, no cross-entity rules, no
+authorization) — the interface-in-domain indirection exists to decouple
+business rules from persistence choices, and there are no business rules
+here to decouple. This mirrors how Now-in-Android-style projects treat their
+`UserDataRepository`. Business entities (Post, Task, Page, ...) keep the
+strict `core:domain`-mediated path once they land in Phase 2+.
+
+**Conséquences** — `core:datastore` is now part of every feature module's
+dependency graph, not just the ones that use it today; acceptable since
+preferences (theme, notifications, accessibility, sync settings) are
+something essentially every feature ends up reading eventually.
+
+---
+
 ## Apply `org.jetbrains.kotlin.android` explicitly instead of relying on AGP 9's built-in Kotlin
 
 **Contexte** — AGP 9.0+ compiles Kotlin without requiring the

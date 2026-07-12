@@ -48,7 +48,9 @@ supports full create/edit/delete/search/navigate/offline testing with zero
 backend configuration. `REMOTE` talks to Supabase (see
 `docs/BACKEND.md`) and is opt-in via `local.properties`.
 
-**Status**: not yet implemented — `core/datastore` and `core/sync` each
-currently contain only a placeholder file. This is Phase 1 (DataStore) /
-Phase 10 (sync queue against a real backend) work; the local demo seed
-lands per-feature starting Phase 2.
+**Status**: `core/datastore`'s `UserPreferencesRepository` is implemented
+(theme, dynamic color, onboarding flag, selected tab, data environment,
+Wi-Fi-only sync, reduce-motion — all backed by Preferences DataStore, Hilt
+singleton-scoped). `core/sync`'s operation queue is not implemented yet —
+that is Phase 10 work, once there is a real backend and real entities to
+sync. The local demo seed lands per-feature starting Phase 2.

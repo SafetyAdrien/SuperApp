@@ -48,5 +48,9 @@ Predictive back where supported, standard system back otherwise, saved
 navigation state across process death (`rememberSaveable` /
 `SavedStateHandle`), edge-to-edge with correct system bar insets.
 
-**Status**: not yet implemented — `core/navigation` currently contains only
-a placeholder file. This is Phase 1 work.
+**Status**: `AppRoute` (Home/Spaces/Messages/Profile/Settings) is
+implemented and wired into a real `NavHost` in `:app`
+(`navigation/SuperAppNavHost.kt`), driven by the five-destination bottom
+navigation bar (`ui/MainScreen.kt`). Deep links (`superapp://...`) and the
+`EntityRef` resolver are not implemented yet — there are no entity detail
+screens to resolve to before Phase 2.
