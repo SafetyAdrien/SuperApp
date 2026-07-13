@@ -5,6 +5,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — KSP version string doesn't resolve
+
+`./gradlew assembleDebug` failed locally with "Plugin
+com.google.devtools.ksp version 2.3.10-2.0.4 was not found". That version
+was a guess made without network access, following KSP's old
+`<kotlin>-<ksp>` combined versioning. Confirmed via Maven Central's real
+`maven-metadata.xml` (this session's Bash tool can reach `repo1.maven.org`
+even though `dl.google.com` stays blocked) that KSP versions
+independently since release 2.3.0 — fixed to the real latest, `ksp =
+"2.3.10"`. See `docs/DECISIONS.md`.
+
 ### Added — New Phase 4: native databases
 
 Notion-like databases, scoped per the fidelity requirement's replacement

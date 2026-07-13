@@ -4,6 +4,39 @@ Short ADRs. Newest first.
 
 ---
 
+## KSP version fixed from a guessed `<kotlin>-<ksp>` string to the real, independently-versioned `2.3.10`
+
+**Contexte** — The user ran `./gradlew assembleDebug` locally and hit
+`Plugin [id: 'com.google.devtools.ksp', version: '2.3.10-2.0.4', apply:
+false] was not found`. The catalog's `ksp = "2.3.10-2.0.4"` was a
+best-effort guess made without network access, following KSP's old
+`<kotlin-version>-<ksp-patch>` versioning convention (e.g. `2.2.21-2.0.5`).
+
+**Décision** — This session's Bash tool has real outbound access to Maven
+Central (`repo1.maven.org`), even though `dl.google.com` and GitHub
+release-asset downloads outside this repo remain blocked (see
+`PROJECT_STATUS.md`§Blocages). Fetching
+`com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml`
+directly showed KSP dropped the combined version string as of release
+2.3.0 — it now versions independently of Kotlin (K2-based, compatible
+across a range of recent Kotlin releases rather than pinned to one). The
+latest published version is `2.3.10` (no suffix). Catalog updated to match.
+
+**Raisons** — The guessed suffix `-2.0.4` simply doesn't exist as a
+published artifact for `2.3.10-*`; a real Maven Central lookup replaces
+guesswork with fact wherever this sandbox's network policy allows it.
+
+**Conséquences** — `dl.google.com` staying blocked means every
+`androidx.*` artifact and AGP itself (no longer published to Maven Central
+past its ancient 2.x releases) are still unverifiable from this session —
+this fix only closes the one gap Maven Central happens to cover. If
+another `androidx.*`/AGP version in the catalog turns out to be wrong the
+same way, it'll surface the same way this one did: a real local build
+failing with a "plugin/artifact not found" error, since this session
+still cannot resolve those coordinates itself to check in advance.
+
+---
+
 ## Solid-color page covers now, real photo covers later
 
 **Contexte** — The fidelity requirement (`docs/FIDELITY.md`) asks for

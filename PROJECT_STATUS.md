@@ -542,9 +542,24 @@ its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
 
 ## Dette technique
 
-- KSP version (`2.3.10-2.0.4` in the catalog) is a best-effort guess at the
-  patch suffix — confirm against `google/ksp` releases before relying on
-  it.
+- ~~KSP version guess~~ **Fixed 2026-07-13**: the user's local
+  `./gradlew assembleDebug` failed with "Plugin ... 2.3.10-2.0.4 ... was
+  not found" — this session's Bash tool turned out to have real network
+  access to Maven Central (`repo1.maven.org`, unlike `dl.google.com` and
+  GitHub release-asset downloads, both still blocked — see "Blocages"
+  above), so the actual published version list was fetched directly from
+  `maven-metadata.xml` instead of guessed. KSP dropped its old
+  `<kotlin>-<ksp>` combined version string as of release 2.3.0 and now
+  versions independently; the catalog now pins the real latest, `ksp =
+  "2.3.10"`. See `docs/DECISIONS.md` and `docs/DEPENDENCIES.md`. This is
+  the first version in this catalog confirmed against the actual artifact
+  repository rather than release notes/search results — worth doing for
+  the rest of the catalog's "Best-effort" rows next time this comes up,
+  though `dl.google.com` being blocked still means every `androidx.*`
+  artifact (Compose, Room, Navigation, Lifecycle, DataStore, WorkManager,
+  Paging, Hilt-navigation-compose, core-ktx, activity-compose, etc.) and
+  AGP itself (no longer published to Maven Central beyond ancient 2.x
+  releases) remain unverifiable from here.
 - `activity-compose` pinned to 1.9.0 (1.12.0 was beta-only at query time).
 - No launcher icon asset pipeline — placeholder vector shapes, explicitly
   commented as temporary.

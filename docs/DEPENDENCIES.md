@@ -15,7 +15,7 @@ dependencies` or the artifact's Maven metadata before relying on it.
 | Android Gradle Plugin | 9.2.0 | Verified | Requires Gradle 9.4.1+, JDK 17, SDK Build Tools 36.0.0+, max API 37 |
 | Gradle | 9.4.1 | Verified | Distribution download blocked in this session (see PROJECT_STATUS.md), not exercised |
 | Kotlin | 2.3.10 | Verified | Matches AGP 9.2.0's bundled built-in-Kotlin default |
-| KSP | 2.3.10-2.0.4 | Best-effort | Exact patch suffix for 2.3.10 not confirmed; check `google/ksp` releases |
+| KSP | 2.3.10 | Verified | Confirmed against Maven Central's `maven-metadata.xml` (2026-07-13) — KSP dropped the old `<kotlin>-<ksp>` combined version string as of 2.3.0; it now versions independently and this release explicitly targets Kotlin 2.4.0-era module naming while remaining compatible with recent 2.3.x Kotlin. The old `2.3.10-2.0.4` guess in this catalog never existed as a published artifact and failed to resolve — see `docs/DECISIONS.md` |
 | Compose BOM | 2026.06.00 | Verified | |
 | Room | 2.8.4 | Verified | Deliberately not Room 3.0.0 — see `docs/DECISIONS.md` |
 | Navigation Compose | 2.9.8 | Verified | Deliberately not Navigation 3 (still alpha) — see `docs/DECISIONS.md` |
