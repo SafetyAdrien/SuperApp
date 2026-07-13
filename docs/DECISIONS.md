@@ -4,6 +4,58 @@ Short ADRs. Newest first.
 
 ---
 
+## Temporary `android.newDsl=false` / `android.builtInKotlin=false` opt-out for AGP 9's DSL
+
+**Contexte** — After the KSP fix, the user's next local `./gradlew
+assembleDebug` failed at `:build-logic:convention:compileKotlin` with ~18
+errors: `CommonExtension<*, *, *, *, *, *>` — "No type arguments expected
+for interface CommonExtension", plus a cascade of "Unresolved reference"
+errors for `compileSdk`/`defaultConfig`/`minSdk`/`compileOptions`/`lint`/
+`buildFeatures`/`compose` inside `ConfigureKotlinAndroid.kt` and
+`ConfigureAndroidCompose.kt`, and a standalone "Unresolved reference
+'targetSdk'" in `AndroidLibraryConventionPlugin.kt`. `build-logic/convention`
+was written against AGP 8.x-era DSL shapes without ever compiling (this
+sandbox has no `dl.google.com` access — see "Blocages"). AGP 9.0 removed
+`CommonExtension`'s six generic type parameters and moved its
+`defaultConfig{}`/`compileOptions{}`/`lint{}`/`buildFeatures{}`
+block-lambda functions onto the concrete `ApplicationExtension`/
+`LibraryExtension`/etc. types, among other DSL changes — confirmed via
+`developer.android.com`'s AGP 9.0 release notes and JetBrains'
+`kotlin-agent-skills` AGP-9-migration skill doc (both reachable from this
+session, unlike `dl.google.com`), whose issue #14 ("BaseExtension/
+LibraryExtension casting fails") explicitly names `android.newDsl=false`
+as "the" temporary, officially-documented opt-out for exactly this class
+of error — "removed in AGP 10.0."
+
+**Décision** — Set `android.newDsl=false` and `android.builtInKotlin=false`
+in `gradle.properties` rather than rewriting `build-logic/convention`'s
+Kotlin files against the new DSL surface right now.
+
+**Raisons** — Confidently rewriting every call site (`minSdk`/`targetSdk`'s
+new version-spec block form, whichever of `defaultConfig`/`compileOptions`/
+`lint`/`buildFeatures` genuinely still exist as trailing-lambda functions on
+which concrete type) requires either a real compiler or exhaustive,
+low-confidence API-reference scraping for each one — this session can reach
+Maven Central and `developer.android.com` but still cannot resolve
+`dl.google.com` to actually compile AGP 9.2 code and verify a rewrite. The
+opt-out flag is Google's own answer to precisely this situation and lets
+the existing, already-reviewed convention-plugin code run unchanged.
+`android.builtInKotlin=false` mirrors this repo's existing decision to
+apply `org.jetbrains.kotlin.android` explicitly (see the ADR below) rather
+than depend on AGP 9's built-in Kotlin.
+
+**Conséquences** — This is explicitly temporary: AGP 10.0 removes the
+opt-out entirely, so `build-logic/convention` must be migrated to the new
+DSL (generic-free `CommonExtension`, `defaultConfig.apply { }` instead of
+`defaultConfig { }`, etc.) before then — flagged in `PROJECT_STATUS.md`.
+Until that migration, this project also can't adopt AGP 9's new DSL
+capabilities app-wide. The fix could not be exercised by a real compile in
+this session either — same "reviewed, not verified" caveat as everything
+else, now one layer more indirect (verified the *existence and intended
+effect* of the flag via official docs, not the actual resulting compile).
+
+---
+
 ## KSP version fixed from a guessed `<kotlin>-<ksp>` string to the real, independently-versioned `2.3.10`
 
 **Contexte** — The user ran `./gradlew assembleDebug` locally and hit
@@ -214,6 +266,11 @@ plugins is confirmed stable in a networked environment.
 
 **Conséquences** — One extra plugin application per module vs. the AGP 9
 default path; revisit in Phase 11 stabilization once a real build has run.
+
+**Update** — `gradle.properties` now also sets `android.builtInKotlin=false`
+explicitly (see the newer ADR above), removing any ambiguity about which
+Kotlin compilation path is active — this project intentionally wants the
+classic KGP path this ADR already chose, not AGP 9's default.
 
 ---
 

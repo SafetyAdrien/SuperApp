@@ -12,7 +12,7 @@ dependencies` or the artifact's Maven metadata before relying on it.
 
 | Dependency | Version | Confidence | Notes |
 |---|---|---|---|
-| Android Gradle Plugin | 9.2.0 | Verified | Requires Gradle 9.4.1+, JDK 17, SDK Build Tools 36.0.0+, max API 37 |
+| Android Gradle Plugin | 9.2.0 | Verified | Requires Gradle 9.4.1+, JDK 17, SDK Build Tools 36.0.0+, max API 37. `gradle.properties` sets `android.newDsl=false`/`android.builtInKotlin=false` (temporary, removed in AGP 10.0) — `build-logic/convention` isn't migrated to AGP 9's new DSL yet, see `docs/DECISIONS.md` |
 | Gradle | 9.4.1 | Verified | Distribution download blocked in this session (see PROJECT_STATUS.md), not exercised |
 | Kotlin | 2.3.10 | Verified | Matches AGP 9.2.0's bundled built-in-Kotlin default |
 | KSP | 2.3.10 | Verified | Confirmed against Maven Central's `maven-metadata.xml` (2026-07-13) — KSP dropped the old `<kotlin>-<ksp>` combined version string as of 2.3.0; it now versions independently and this release explicitly targets Kotlin 2.4.0-era module naming while remaining compatible with recent 2.3.x Kotlin. The old `2.3.10-2.0.4` guess in this catalog never existed as a published artifact and failed to resolve — see `docs/DECISIONS.md` |

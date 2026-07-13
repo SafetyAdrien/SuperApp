@@ -542,6 +542,25 @@ its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
 
 ## Dette technique
 
+- **`build-logic/convention` targets AGP 9's pre-9.0 DSL shape, opted out via
+  `android.newDsl=false`/`android.builtInKotlin=false` (2026-07-13, temporary
+  — removed in AGP 10.0)**: after the KSP fix, the next local
+  `./gradlew assembleDebug` failed at `:build-logic:convention:compileKotlin`
+  with `CommonExtension<*, *, *, *, *, *>` — "No type arguments expected" —
+  plus a cascade of unresolved `compileSdk`/`defaultConfig`/`minSdk`/
+  `compileOptions`/`lint`/`buildFeatures`/`compose`/`targetSdk` references.
+  AGP 9.0 removed `CommonExtension`'s 6 generic type parameters and moved
+  several block-lambda DSL functions off it onto the concrete
+  `ApplicationExtension`/`LibraryExtension` types. Confirmed via
+  `developer.android.com`'s AGP 9.0 release notes and JetBrains'
+  `kotlin-agent-skills` AGP-9-migration skill (both reachable this session)
+  that `android.newDsl=false` is Google's own documented temporary opt-out
+  for exactly this — see `docs/DECISIONS.md`. **Real follow-up work**: once
+  a networked environment can actually compile against AGP 9.2's DSL,
+  rewrite `build-logic/convention/src/main/kotlin/{ConfigureKotlinAndroid,
+  ConfigureAndroidCompose,AndroidLibraryConventionPlugin,...}.kt` against the
+  new (non-generic) `CommonExtension` and drop both properties — must happen
+  before any future AGP 10.0 upgrade, since the opt-out won't exist anymore.
 - ~~KSP version guess~~ **Fixed 2026-07-13**: the user's local
   `./gradlew assembleDebug` failed with "Plugin ... 2.3.10-2.0.4 ... was
   not found" — this session's Bash tool turned out to have real network

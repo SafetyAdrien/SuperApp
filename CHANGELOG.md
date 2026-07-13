@@ -5,6 +5,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — `build-logic/convention` doesn't compile against AGP 9's DSL
+
+`./gradlew assembleDebug` failed at `:build-logic:convention:compileKotlin`
+with `CommonExtension<*, *, *, *, *, *>` ("No type arguments expected") and
+a cascade of unresolved `compileSdk`/`defaultConfig`/`minSdk`/
+`compileOptions`/`lint`/`buildFeatures`/`compose`/`targetSdk` references.
+AGP 9.0 removed `CommonExtension`'s generic type parameters and moved
+several DSL block functions onto the concrete `ApplicationExtension`/
+`LibraryExtension` types — this repo's convention plugins were written
+against the pre-9.0 shape without ever compiling. Set `android.newDsl=false`
+and `android.builtInKotlin=false` in `gradle.properties` — Google's own
+documented temporary opt-out for this exact class of error (removed in AGP
+10.0). See `docs/DECISIONS.md`; migrating `build-logic/convention` to the
+new DSL properly is tracked as follow-up work in `PROJECT_STATUS.md`.
+
 ### Fixed — KSP version string doesn't resolve
 
 `./gradlew assembleDebug` failed locally with "Plugin
