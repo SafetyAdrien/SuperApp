@@ -26,6 +26,10 @@ interface PageDao {
     )
     fun observeRecentPagesForMember(profileId: String, limit: Int): Flow<List<PageEntity>>
 
+    /** A collection's entries — order is view-dependent, sorted/filtered in the domain layer (`CollectionViewEngine`). */
+    @Query("SELECT * FROM pages WHERE collectionId = :collectionId AND archivedAt IS NULL ORDER BY createdAt ASC")
+    fun observePagesForCollection(collectionId: String): Flow<List<PageEntity>>
+
     @Query("SELECT * FROM pages WHERE id = :pageId")
     fun observePage(pageId: String): Flow<PageEntity?>
 

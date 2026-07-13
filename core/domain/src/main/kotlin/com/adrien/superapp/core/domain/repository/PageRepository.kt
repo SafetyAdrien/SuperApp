@@ -13,7 +13,7 @@ interface PageRepository {
 
     fun observePage(pageId: String): Flow<Page?>
 
-    suspend fun createPage(spaceId: String, title: String, createdBy: String): AppResult<Page>
+    suspend fun createPage(spaceId: String, title: String, createdBy: String, collectionId: String? = null): AppResult<Page>
 
     suspend fun renamePage(pageId: String, title: String): AppResult<Unit>
 

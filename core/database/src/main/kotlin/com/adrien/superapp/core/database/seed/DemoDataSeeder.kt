@@ -112,6 +112,7 @@ class DemoDataSeeder @Inject constructor(
                     icon = icon,
                     coverUrl = null,
                     coverColorKey = if (index == 0) "amber" else null,
+                    collectionId = null,
                     createdBy = demoProfile.id,
                     createdAt = createdAt,
                     updatedAt = createdAt,

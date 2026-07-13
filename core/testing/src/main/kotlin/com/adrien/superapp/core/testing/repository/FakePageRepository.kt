@@ -31,7 +31,12 @@ class FakePageRepository : PageRepository {
 
     override fun observePage(pageId: String) = pages.map { list -> list.firstOrNull { it.id == pageId } }
 
-    override suspend fun createPage(spaceId: String, title: String, createdBy: String): AppResult<Page> {
+    override suspend fun createPage(
+        spaceId: String,
+        title: String,
+        createdBy: String,
+        collectionId: String?,
+    ): AppResult<Page> {
         if (shouldFail) return AppResult.Failure(AppError.Unknown())
 
         val now = System.currentTimeMillis()
@@ -39,6 +44,7 @@ class FakePageRepository : PageRepository {
             id = UUID.randomUUID().toString(),
             spaceId = spaceId,
             title = title,
+            collectionId = collectionId,
             createdBy = createdBy,
             createdAt = now,
             updatedAt = now,

@@ -228,6 +228,88 @@ covers the new plan's Phase 0–3).
   added (`material-icons-extended` on every feature module already covers
   this pass's new icons).
 
+### Nouvelle Phase 4 — Bases de données (post-retrofit)
+
+Native Notion-like databases, scoped per the "Retrofit immédiat" +
+"Nouvelle Phase 4 — Bases de données" decisions made when the fidelity
+requirement's 15-phase plan replaced the old one (see the conversation
+history / `docs/FIDELITY.md`).
+
+- **`core:model`**: `Collection`, `CollectionProperty`,
+  `CollectionPropertyOption`, `CollectionEntry`, `CollectionViewType`,
+  `FilterOperator`, `CollectionView` (`Collection.kt`);
+  `CollectionPropertyType` (14 of ~18 types — see `docs/DATA_MODEL.md`) +
+  `isSystemProperty`/`hasOptions` extension vals
+  (`CollectionPropertyType.kt`). `Page` gained `collectionId: String?` — a
+  collection entry *is* a page, per the brief (see `docs/DECISIONS.md`).
+- **`core:database`**: 5 new entities (`CollectionEntity`,
+  `CollectionPropertyEntity`, `CollectionPropertyOptionEntity`,
+  `CollectionPropertyValueEntity` — composite `(pageId, propertyId)` key —,
+  `CollectionViewEntity`), 4 new DAOs (`CollectionDao`,
+  `CollectionPropertyDao` — also owns options —, `CollectionPropertyValueDao`,
+  `CollectionViewDao`), `CollectionMapper.kt` (bidirectional, enum fields
+  stored as their name string with a `runCatching { valueOf(...) }` fallback
+  the same way `BlockType` already does), `PageDao.observePagesForCollection`,
+  `CollectionRepositoryImpl` (gap-based positions for properties/options/
+  views, same `POSITION_GAP = 1000L` scheme as blocks; `createCollection`
+  seeds a default "Table" view so a brand-new database is never
+  view-less; `observeEntries` combines the entry-page list with a
+  properties-joined value query into `CollectionEntry`). `SuperAppDatabase`
+  stays version 1 (same reasoning as every prior phase — never shipped to a
+  device in this sandbox).
+- **`core:domain`**: `CollectionRepository` (18 methods: collections,
+  properties, options, entries/values, views) + `MoveDirection`-based
+  property reordering (reusing the enum `BlockRepository` already
+  declared). 19 new use cases (`ObserveCollectionsUseCase` …
+  `DeleteViewUseCase`). `CollectionViewEngine`
+  (`core/domain/collection/CollectionViewEngine.kt`) — a pure,
+  Room/Flow-independent object: `apply(entries, view)` filters then sorts,
+  `group(entries, groupPropertyId)` buckets for Kanban columns. Numeric
+  string values sort numerically (zero-padded `%020.6f` formatting) rather
+  than lexically; missing values sort as empty/first.
+- **`core:testing`**: `FakeCollectionRepository` — full in-memory
+  implementation, same gap-position math as the real repository so
+  use-case tests exercise identical logic.
+- **`core:navigation`**: `AppRoute.CollectionDetail(collectionId)`.
+- **`feature:spaces`**: collections list + creation on `SpaceDetailScreen`
+  (a "Bases de données" section alongside "Pages", one FAB → bottom sheet
+  choosing "Nouvelle page" / "Nouvelle base de données" —
+  `CollectionListItem`); `CollectionDetailScreen` (the main screen —
+  `TabRow` of views, a "⋮" menu for Properties/Nouvelle vue, a gear icon
+  opening the active view's config sheet, `when(activeView.type)` dispatch
+  to `CollectionTableView` (name: value chip row per entry — a real
+  desktop grid isn't reproduced on phone width, per `docs/FIDELITY.md`'s
+  mobile-adaptation rule), `CollectionListView` (title only), or
+  `CollectionKanbanView` (`LazyRow` of columns derived from entries' actual
+  grouped values, not a property's full option list — no drag-and-drop
+  between columns, moving an entry means opening it and changing the
+  property value); `CollectionPropertiesSheetContent` (rename/hide/
+  reorder/delete properties, expandable inline option editors for
+  SELECT/MULTI_SELECT/STATUS, an "Ajouter une propriété" form with a type
+  picker); `CreateViewContent` (name + view-type picker);
+  `ViewConfigContent` (sort/filter/(Kanban) group pickers, delete-view —
+  every control commits immediately, no separate "Save" step, matching
+  the rest of the app's persistence pattern).
+- **`feature:editor`**: `PropertyValueRow` — one property editor per
+  `CollectionPropertyType`, shown as a section on `PageDetailScreen`
+  whenever `page.collectionId != null`: text-like types as text fields,
+  `CHECKBOX` as a `Checkbox`, `SELECT`/`STATUS`/`MULTI_SELECT` as dropdown
+  pickers (storing labels, not ids — see `docs/DECISIONS.md`), `PERSON` as
+  a tap-to-assign-to-me toggle, `CREATED_AT`/`UPDATED_AT`/`CREATED_BY` as
+  read-only (reading the page's own fields, never a value row).
+  `PageDetailViewModel` gained the properties/options/values pipeline
+  (`ObservePropertiesUseCase`/`ObserveOptionsUseCase`/
+  `ObserveEntryValuesUseCase`/`ObserveCurrentProfileUseCase`/
+  `SetPropertyValueUseCase`) with the same DB-echo-vs-local-typing guard
+  used for the title and block content, scoped to the free-text property
+  types only (select/checkbox/person types are set atomically, so always
+  adopting the DB value for them is safe and picks up remote deletions —
+  see the inline comment in `PageDetailViewModel`).
+- **Navigation**: `composable<AppRoute.CollectionDetail>` added to
+  `SuperAppNavHost.kt`; `SpaceDetailScreen`'s `onCollectionClick` param
+  (added when the collections-list work landed) is now actually wired at
+  its call site.
+
 ## Fonctionnalités en cours
 
 None open mid-implementation — every phase (and this retrofit pass)
@@ -273,6 +355,21 @@ attempted this session reached a documented stopping point.
   soft-delete/trash UI (`Page.archivedAt` exists but `deletePage` is a
   hard delete, not a move-to-trash). Discord-like communities and
   Figma-like canvas are entirely unbuilt — see `docs/FIDELITY.md`.
+- **Rest of the new Phase 4 (databases)**: Gallery and Calendar views
+  (`CollectionViewType` has no case for either); `FILE`/`RELATION`/
+  `AGGREGATION`/`FORMULA`/`LAST_EDITED_BY` property types; compound
+  (multi-condition) filter/sort — one sort key and one filter condition per
+  view, not several; per-view property visibility — `CollectionProperty.visible`
+  is one global flag, not one per view; no drag-and-drop between Kanban
+  columns (only editing the entry's property value moves it); no name
+  resolution for `CREATED_BY`/`PERSON` (both show/store a raw profile id —
+  fine for the single local demo profile, needs a real multi-profile
+  lookup once accounts exist); no `deleteCollection` (a collection, once
+  created, cannot be deleted — deleting its last entry page doesn't remove
+  the schema either); renaming/deleting a `SELECT`/`MULTI_SELECT`/`STATUS`
+  option doesn't retroactively update entries that already stored the old
+  label (see `docs/DECISIONS.md`). All exactly as scoped when this phase
+  started — see `docs/DECISIONS.md`'s scope-cut ADR.
 - **Phases 5–14 (new plan) / 5–11 (old plan)**: exactly as scoped in the
   project brief. `core:network`, `core:sync`, `core:notifications`, and
   `feature:{onboarding,auth,projects,search,notifications,canvas}` still
@@ -326,6 +423,26 @@ are unverified against the extended icon set the same way Phase 1–4's
 icons were. Treat all of it as "reviewed, not verified" until a real build
 runs.
 
+The new Phase 4 (databases) adds its own share of unverified surface:
+`CollectionDetailViewModel` and `PageDetailViewModel` are the first
+ViewModels to `flatMapLatest` a dynamic, runtime-sized list of flows —
+`combine(optionProperties.map { observeOptionsUseCase(it.id) }, ...)` uses
+the `combine(flows: Iterable<Flow<T>>, transform: (Array<T>) -> R)` overload
+for the first time in this codebase (`@OptIn(ExperimentalCoroutinesApi::class)`
+for `flatMapLatest` itself is also a first). Both branches of every
+`if/else` feeding that pipeline were given matching explicit generic type
+arguments (`emptyMap<String, List<CollectionPropertyOption>>()`) rather than
+relying on if-expression type-unification inference, specifically because
+an earlier draft of `CollectionDetailViewModel` was caught missing that
+during this pass's self-review — see "What was done instead" below.
+`CollectionDetailScreen`/`CollectionPropertiesSheetContent`/
+`ViewConfigContent`/`PropertyValueRow` all use `Modifier.weight(1f)` inside
+`Row`s the same risky way `BlockRow` did in Phase 4 (valid only inside the
+right scope, not compiler-checked) — two of those files were initially
+missing the `androidx.compose.foundation.layout.weight` import entirely and
+were caught and fixed in this same self-review pass, which is exactly the
+class of error this sandbox's lack of a compiler cannot catch on its own.
+
 ### Exact commands run and their exact result (from the Phase 0 pass;
 reproduces identically today — the sandbox's network policy hasn't
 changed)
@@ -376,11 +493,26 @@ None of this substitutes for an actual `./gradlew assembleDebug`.
                            # SpaceDaoTest, CreateBlockUseCaseTest,
                            # MoveBlockUseCaseTest, BlockDaoTest,
                            # DeletePageUseCaseTest, ObserveRecentPagesUseCaseTest,
-                           # ChangeBlockTypeUseCaseTest, PageDaoTest
+                           # ChangeBlockTypeUseCaseTest, PageDaoTest,
+                           # CollectionViewEngineTest, MovePropertyUseCaseTest,
+                           # CollectionDaoTest
 ./gradlew lint
 ```
 
-Fix whatever surfaces. Prime suspects, in rough likelihood order: whether
+Fix whatever surfaces. From the new Phase 4 (databases): whether the
+`combine(Iterable<Flow<T>>, transform: (Array<T>) -> R)` overload used in
+`CollectionDetailViewModel.optionsByProperty` and
+`PageDetailViewModel`'s properties/options pipeline actually infers the way
+reviewed (an empty-`Iterable` edge case — zero option-bearing properties —
+falls back to a plain `flowOf(...)` branch instead, so `combine` itself is
+never called with zero flows, which is the one input it explicitly
+disallows at runtime); whether `TabRow`'s `selectedTabIndex` staying in
+sync with `Tab`'s `selected` booleans (computed independently, from
+`indexOfFirst` vs. an `it.id == activeView?.id` check) ever drifts;
+whether `CollectionPropertyDao`'s two-tables-one-`@Dao` shape (properties +
+options) compiles cleanly at this Room version the same way `BlockDao`'s
+single-table shape already does. Prime suspects from earlier phases, in
+rough likelihood order: whether
 every icon used since Phase 1 (`StickyNote2`, `Draw`, `Groups`,
 `AutoMirrored.Article`/`Message`, Phase 4's block-type icons) actually needed
 the `material-icons-extended` fix or was already in `material-icons-core`
@@ -456,6 +588,28 @@ its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
   sets it. The "Corbeille" section in the workspace home is therefore a
   placeholder, not a real trash view, even though the underlying column
   exists.
+- `CollectionRepositoryImpl.moveProperty` (and the property/view/option
+  create-then-seed-a-default-view sequence in `createCollection`) has the
+  same non-transactional multiple-sequential-writes shape as
+  `BlockRepositoryImpl.moveBlock` — same "not a real risk without
+  concurrent writers yet, worth a Room `@Transaction` later" note.
+- `ViewConfigContent`'s filter-value `SuperTextField` commits on every
+  keystroke via `onUpdate`, same no-debounce tradeoff as the page title/
+  block content.
+- No unit test for `CollectionDetailViewModel` or `PageDetailViewModel`'s
+  new properties/options/values `combine`/`flatMapLatest` pipeline yet —
+  same "ViewModels are thin, use-case tests cover the logic" reasoning as
+  above, but this is the most complex flow-composition code in the app so
+  far (dynamic per-property option flows via `combine(Iterable<Flow<T>>)`)
+  and would benefit from a Turbine test more than most.
+- `PageDetailViewModel`'s free-text property value merge (guarding against
+  the DB-echo-vs-local-typing race the same way block content does) has a
+  known minor gap: if a text-like property value is cleared locally while
+  a stale DB emission with the old value is still in flight, that stale
+  value can briefly reappear before the DB's own delete confirmation
+  arrives — see the inline comment and `docs/DECISIONS.md`'s pattern
+  discussion. Cosmetic, single-user-local scale, not fixed given the
+  complexity/benefit tradeoff.
 
 ## TODO justifiés
 
@@ -479,9 +633,10 @@ built" (`docs/FIDELITY.md`'s "no silent placeholders" rule).
 
 `gradle projects` (system Gradle 8.14.3) on 2026-07-12 — failed at AGP
 plugin resolution (network blocker above), not evaluated further. Not
-re-attempted after Phase 1, Phase 2, Phase 3, Phase 4, or the retrofit
-pass's changes since the blocker is unchanged; see "What was done instead"
-above for the static checks that were run each pass.
+re-attempted after Phase 1, Phase 2, Phase 3, Phase 4, the retrofit pass,
+or the new Phase 4 (databases)'s changes since the blocker is unchanged;
+see "What was done instead" above for the static checks that were run each
+pass.
 
 ## Derniers tests exécutés
 
@@ -497,10 +652,19 @@ space" exclusion case); from Phase 4, `CreateBlockUseCaseTest` (gap-based
 position math: first block, insert-between, append-after-last),
 `MoveBlockUseCaseTest` (swap up/down, no-op at either edge — pure JVM,
 fakes only, core:domain), and `BlockDaoTest` (Robolectric + in-memory Room,
-core:database — ordering by position, delete, content/checked update); and
+core:database — ordering by position, delete, content/checked update);
 from the retrofit pass, `DeletePageUseCaseTest`, `ObserveRecentPagesUseCaseTest`,
 `ChangeBlockTypeUseCaseTest` (pure JVM, fakes only, core:domain), and
 `PageDaoTest` (Robolectric + in-memory Room, core:database — recent-pages
-ordering, the "viewer never joined" exclusion case, delete). These are the
-first tests to actually exercise in a networked environment, since they're
-the lowest-risk/highest-value ones to confirm first.
+ordering, the "viewer never joined" exclusion case, delete); and from the
+new Phase 4 (databases), `CollectionViewEngineTest` (pure JVM, no fakes
+needed — the engine has no dependencies: EQUALS/CONTAINS/IS_CHECKED/
+IS_EMPTY filters, numeric-vs-lexical sort ordering including the
+missing-value-sorts-first case, ascending/descending, and grouping
+including the null/"no value" bucket), `MovePropertyUseCaseTest` (same
+swap-up/down/no-op-at-edges shape as `MoveBlockUseCaseTest`, pure JVM,
+fakes only, core:domain), and `CollectionDaoTest` (Robolectric + in-memory
+Room, core:database — `CollectionDao`'s per-space scoping and the new
+`PageDao.observePagesForCollection` query). These are the first tests to
+actually exercise in a networked environment, since they're the
+lowest-risk/highest-value ones to confirm first.

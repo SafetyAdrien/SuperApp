@@ -111,6 +111,7 @@ class PageDaoTest {
         icon = null,
         coverUrl = null,
         coverColorKey = null,
+        collectionId = null,
         createdBy = owner.id,
         createdAt = updatedAt,
         updatedAt = updatedAt,

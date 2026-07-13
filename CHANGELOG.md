@@ -5,6 +5,41 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added — New Phase 4: native databases
+
+Notion-like databases, scoped per the fidelity requirement's replacement
+15-phase plan (see `docs/FIDELITY.md`):
+
+- `core:model`: `Collection`, `CollectionProperty`, `CollectionPropertyOption`,
+  `CollectionEntry`, `CollectionView`, `CollectionViewType`, `FilterOperator`,
+  `CollectionPropertyType` (14 of ~18 property types). `Page.collectionId` —
+  a collection entry is a page, per the brief.
+- `core:database`: 5 new entities, 4 new DAOs, `CollectionMapper.kt`,
+  `PageDao.observePagesForCollection`, `CollectionRepositoryImpl`.
+- `core:domain`: `CollectionRepository` (18 methods) + 19 use cases;
+  `CollectionViewEngine` (pure filter/sort/group logic).
+- `core:testing`: `FakeCollectionRepository`.
+- `core:navigation`: `AppRoute.CollectionDetail`.
+- `feature:spaces`: collections list + creation on `SpaceDetailScreen`;
+  `CollectionDetailScreen` (Table/List/Kanban views via a `TabRow`,
+  properties-management sheet, create-view sheet, view-config sheet).
+- `feature:editor`: `PropertyValueRow` — a type-driven property editor
+  section on `PageDetailScreen`, shown when the page is a collection entry.
+- Scope cuts (all documented in `docs/DECISIONS.md`): Gallery/Calendar
+  views deferred; `FILE`/`RELATION`/`AGGREGATION`/`FORMULA`/`LAST_EDITED_BY`
+  property types deferred; single-condition filter/sort per view, not
+  compound; property visibility is global, not per-view; `SELECT`/
+  `MULTI_SELECT`/`STATUS` values store option labels, not ids.
+- New tests: `CollectionViewEngineTest`, `MovePropertyUseCaseTest`
+  (core:domain), `CollectionDaoTest` (core:database).
+
+### Known issue (unchanged from Phase 0–4/retrofit, now also covers this pass)
+
+- Still not compiled end-to-end in this sandbox — see `PROJECT_STATUS.md`
+  §Blocages. First uses of `@OptIn(ExperimentalCoroutinesApi::class)`
+  (`flatMapLatest`) and the `combine(Iterable<Flow<T>>, ...)` overload for a
+  dynamic, runtime-sized list of flows (one per select-like property).
+
 ### Added — Fidelity retrofit: Notion-like workspace home and page header
 
 The brief was extended with a standing requirement for strong structural/

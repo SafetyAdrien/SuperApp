@@ -36,12 +36,18 @@ class PageRepositoryImpl @Inject constructor(
     override fun observePage(pageId: String): Flow<Page?> =
         pageDao.observePage(pageId).map { it?.toModel() }
 
-    override suspend fun createPage(spaceId: String, title: String, createdBy: String): AppResult<Page> = try {
+    override suspend fun createPage(
+        spaceId: String,
+        title: String,
+        createdBy: String,
+        collectionId: String?,
+    ): AppResult<Page> = try {
         val now = System.currentTimeMillis()
         val page = Page(
             id = UUID.randomUUID().toString(),
             spaceId = spaceId,
             title = title,
+            collectionId = collectionId,
             createdBy = createdBy,
             createdAt = now,
             updatedAt = now,

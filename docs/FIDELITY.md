@@ -75,3 +75,13 @@ only needed top-bar search/notification affordances added. Discord-like
 communities and Figma-like canvas are still entirely unbuilt — they land
 in their own future phases (see the brief's phase renumbering, not yet
 reconciled 1:1 with `PROJECT_STATUS.md`'s phase history).
+
+**New Phase 4 (databases)**: native Notion-like databases landed —
+`feature:spaces`'s `CollectionDetailScreen` (Table/List/Kanban `TabRow`,
+per-view sort/filter/group configuration, a properties-management sheet
+with rename/hide/reorder/delete and inline option editors) plus
+`feature:editor`'s `PropertyValueRow` section on any page that is a
+collection entry. Meets the validity bar's "au moins Table + Liste, avec
+tri et filtre simples" — see `docs/DECISIONS.md` for the exact scope cut
+(Gallery/Calendar views, File/Relation/formula properties, and compound
+filter/sort are deferred, not silently missing).

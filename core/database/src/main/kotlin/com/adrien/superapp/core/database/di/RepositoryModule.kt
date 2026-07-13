@@ -1,12 +1,14 @@
 package com.adrien.superapp.core.database.di
 
 import com.adrien.superapp.core.database.repository.BlockRepositoryImpl
+import com.adrien.superapp.core.database.repository.CollectionRepositoryImpl
 import com.adrien.superapp.core.database.repository.PageRepositoryImpl
 import com.adrien.superapp.core.database.repository.PostRepositoryImpl
 import com.adrien.superapp.core.database.repository.ProfileRepositoryImpl
 import com.adrien.superapp.core.database.repository.ReactionRepositoryImpl
 import com.adrien.superapp.core.database.repository.SpaceRepositoryImpl
 import com.adrien.superapp.core.domain.repository.BlockRepository
+import com.adrien.superapp.core.domain.repository.CollectionRepository
 import com.adrien.superapp.core.domain.repository.PageRepository
 import com.adrien.superapp.core.domain.repository.PostRepository
 import com.adrien.superapp.core.domain.repository.ProfileRepository
@@ -45,4 +47,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindsBlockRepository(impl: BlockRepositoryImpl): BlockRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindsCollectionRepository(impl: CollectionRepositoryImpl): CollectionRepository
 }

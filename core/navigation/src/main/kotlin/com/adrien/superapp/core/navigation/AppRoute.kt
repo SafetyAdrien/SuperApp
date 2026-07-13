@@ -44,4 +44,7 @@ sealed interface AppRoute {
 
     @Serializable
     data class PageDetail(val pageId: String) : AppRoute
+
+    @Serializable
+    data class CollectionDetail(val collectionId: String) : AppRoute
 }

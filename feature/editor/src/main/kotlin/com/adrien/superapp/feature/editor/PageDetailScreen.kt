@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adrien.superapp.core.designsystem.component.SuperBottomSheet
+import com.adrien.superapp.core.designsystem.component.SuperDivider
 import com.adrien.superapp.core.designsystem.component.SuperEmptyState
 import com.adrien.superapp.core.designsystem.component.SuperLoadingIndicator
 import com.adrien.superapp.core.designsystem.component.SuperTextField
@@ -155,6 +156,22 @@ fun PageDetailScreen(
                             vertical = SuperAppTheme.spacing.space8,
                         ),
                     )
+                }
+
+                if (uiState.collectionId != null) {
+                    items(items = uiState.properties, key = { "property-${it.id}" }) { property ->
+                        PropertyValueRow(
+                            property = property,
+                            pageCreatedAt = uiState.createdAt,
+                            pageUpdatedAt = uiState.updatedAt,
+                            pageCreatedBy = uiState.createdBy,
+                            value = uiState.propertyValues[property.id],
+                            options = uiState.optionsByProperty[property.id].orEmpty(),
+                            currentProfileId = uiState.currentProfileId,
+                            onValueChange = { value -> viewModel.onSetPropertyValue(property.id, value) },
+                        )
+                    }
+                    item { SuperDivider() }
                 }
 
                 if (uiState.blocks.isEmpty()) {

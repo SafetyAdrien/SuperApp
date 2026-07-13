@@ -40,6 +40,31 @@ All ids are string UUIDs.
 - **CanvasDocument** / **CanvasNode** — id, canvasId/spaceId, type (`TEXT`,
   `NOTE`, `RECTANGLE`, `ELLIPSE`, `IMAGE`, `CONNECTOR`), x/y/width/height/
   rotation/zIndex, properties.
+- **Collection** — id, spaceId, title, icon, createdBy, timestamps. A
+  Notion-like database: a schema (`CollectionProperty`) applied to a set of
+  pages.
+- **CollectionProperty** — id, collectionId, name, type (14 of the brief's
+  ~18: `TEXT`, `NUMBER`, `SELECT`, `MULTI_SELECT`, `STATUS`, `DATE`,
+  `CHECKBOX`, `URL`, `EMAIL`, `PHONE`, `PERSON`, `CREATED_AT`, `UPDATED_AT`,
+  `CREATED_BY` — `FILE`/`RELATION` deferred, `AGGREGATION`/`FORMULA` are
+  explicitly "ultérieure" in the brief, `LAST_EDITED_BY` needs
+  edit-attribution tracking `Page` doesn't have), position, visible.
+- **CollectionPropertyOption** — id, propertyId, label, colorKey, position —
+  the fixed choice list backing `SELECT`/`MULTI_SELECT`/`STATUS`.
+- **CollectionPropertyValue** — (pageId, propertyId) composite key, value
+  (nullable string) — Room-only, never modeled in `core:model` directly;
+  exposed to the rest of the app as `CollectionEntry.values: Map<String,
+  String>`. A property with no row for a given entry is simply absent, not
+  stored as an explicit empty value.
+- **CollectionEntry** — not its own table: a `Page` (with `collectionId`
+  set) plus its `CollectionPropertyValue` rows, joined at the repository
+  boundary. "Chaque entrée de base de données doit également être une
+  page" — see below.
+- **CollectionView** — id, collectionId, name, type (`TABLE` / `LIST` /
+  `KANBAN` — `GALLERY`/`CALENDAR` deferred), position, sortPropertyId,
+  sortDescending, groupPropertyId (Kanban only), filterPropertyId,
+  filterOperator, filterValue. One sort key and one filter condition per
+  view, not the brief's full compound filter/sort — see `docs/DECISIONS.md`.
 
 ## Cross-entity references
 
@@ -104,3 +129,20 @@ profile the same way `SpaceRepository.observeSpaces` is) and `deletePage`
 `type` without touching its `position`/`content` — this is the "/" command's
 effect (see `PageDetailViewModel`), distinct from `createBlock` which only
 ever appends a new block.
+
+**New Phase 4 (databases)**: added Collection, CollectionProperty,
+CollectionPropertyOption, CollectionPropertyValue, and CollectionView (see
+above). `Page` gained `collectionId: String?` — set when a page is a
+collection entry, null for an ordinary page; `PageDao.observePagesForCollection`
+is the entry-list query. `CollectionRepositoryImpl.observeEntries` combines
+that page list with `CollectionPropertyValueDao.observeValuesForCollection`
+(one query, joined against `collection_properties` to scope by
+`collectionId` even though the value table itself only has `pageId`/
+`propertyId`) into `CollectionEntry` — no dedicated entry table exists.
+`CollectionViewEngine` (`core:domain`) is a pure, Room/Flow-independent
+object applying a view's filter then sort (`apply`) or grouping entries by a
+property's value (`group`, Kanban's columns) — kept out of the repository so
+it's cheap to unit test and reusable across the Table/List/Kanban
+composables without duplicating the same `when`. `SELECT`/`MULTI_SELECT`/
+`STATUS` property values are stored as the option's label text directly,
+not its id (see `docs/DECISIONS.md`).

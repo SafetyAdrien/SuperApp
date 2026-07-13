@@ -255,3 +255,95 @@ whatever surfaces — version catalog entries here were chosen carefully but
 are not guaranteed to resolve without adjustment (see
 `docs/DEPENDENCIES.md` for the confidence level on each version). See
 `PROJECT_STATUS.md` for the exact commands run and their exact output.
+
+---
+
+## Collection entries are pages, not a parallel entity
+
+**Contexte** — The brief is explicit: "chaque entrée de base de données
+doit également être une page." A database entry needs a title, an icon, and
+free-form block content in addition to its typed property values.
+
+**Décision** — `Page` gained `collectionId: String?`. When set, that page
+*is* a collection entry — its title/icon/blocks are the existing `Page`/
+`Block` machinery, unchanged. `CollectionEntry` (`core:model`) is not a
+Room table; it's `Page` plus a `Map<String, String>` of that page's
+`CollectionPropertyValue` rows, assembled at the repository boundary
+(`CollectionRepositoryImpl.observeEntries`).
+
+**Raisons** — Building a second title/icon/content system for entries would
+duplicate `PageDao`/`BlockDao`/`PageDetailScreen` for no benefit — an entry
+opens in the exact same page editor as any other page, just with a
+properties section prepended (`feature:editor`'s `PropertyValueRow`,
+conditional on `page.collectionId != null`).
+
+**Conséquences** — An entry can be navigated to and edited from anywhere a
+regular page can (`AppRoute.PageDetail`), which is the desired Notion-like
+behavior. It also means deleting a collection does not cascade to its
+entries' pages automatically the way `CollectionPropertyValueEntity`'s
+foreign keys cascade — `deleteCollection` isn't implemented yet (not in
+`CollectionRepository`'s surface), so this gap is latent rather than active,
+but worth flagging before that method is added.
+
+---
+
+## `SELECT`/`MULTI_SELECT`/`STATUS` values are stored as option labels, not option ids
+
+**Contexte** — A `CollectionPropertyValue.value` needs to identify which
+option(s) of a `SELECT`/`MULTI_SELECT`/`STATUS` property an entry has
+chosen.
+
+**Décision** — Store the option's `label` text directly (comma-joined for
+`MULTI_SELECT`), not its `id`. `CollectionViewEngine`'s filter/sort and
+every rendering site (`CollectionEntryRow`, `PropertyValueRow`) read the
+stored string as the display value with no lookup.
+
+**Raisons** — An id-based scheme needs an `optionId → label` join at every
+read site (list rows, Kanban cards, the property editor, `CollectionViewEngine`'s
+filter-by-value and group-by-value) for a feature that, at this scale, has
+no real benefit from the indirection — no reference integrity engine, no
+option-rename-cascades-to-old-values requirement in the brief.
+
+**Conséquences** — Renaming or deleting an option does not retroactively
+update entries that already stored the old label — a `MULTI_SELECT` value
+list can end up containing a label matching no current option
+(`CollectionPropertyDao.deleteOption` doesn't touch
+`collection_property_values` at all). Acceptable at the current scale; an
+id-based scheme with a cascade-on-rename/cascade-on-delete would be the fix
+if this becomes a real problem.
+
+---
+
+## Databases scope cut: 3 of 5 view types, 14 of ~18 property types, single-condition filter/sort
+
+**Contexte** — The brief's database spec asks for Table/List/Kanban/Gallery/
+Calendar views, ~18 property types, compound (multi-condition) filtering and
+sorting, and per-view (not just per-collection) property visibility.
+
+**Décision** — Built Table, List, and Kanban views (`CollectionViewType`
+has no `GALLERY`/`CALENDAR` case); 14 property types (`CollectionPropertyType`
+— see `docs/DATA_MODEL.md` for exactly which 4 are missing and why); one
+sort key and one filter condition per `CollectionView`, not compound;
+property visibility (`CollectionProperty.visible`) is a single global flag,
+not one flag per view.
+
+**Raisons** — Same "document every scope decision rather than fake it"
+discipline as every prior phase. Gallery needs image thumbnails (no image
+loader pulled in yet, same reason `Page.coverUrl` is unused); Calendar needs
+a date-grid renderer with no existing precedent in this codebase to build
+on quickly. `FILE`/`RELATION` property types need an attachment picker and
+a cross-collection entry picker respectively; `AGGREGATION`/`FORMULA` are
+explicitly "ultérieure" in the brief itself; `LAST_EDITED_BY` needs
+edit-attribution tracking `Page` doesn't have. Compound filter/sort and
+per-view visibility are meaningfully more UI (multi-row condition builders)
+for a first pass that already covers the validity-criteria bar in
+`docs/FIDELITY.md` ("des vues configurables (au moins Table + Liste), avec
+tri et filtre simples").
+
+**Conséquences** — `ViewConfigContent` only exposes one sort/filter row —
+switching views is the only way to see the same collection sliced two
+different ways. Widening to compound conditions later means changing
+`CollectionView`'s single `sortPropertyId`/`filterPropertyId` fields to
+lists (and `CollectionViewEngine.apply`'s `filter`/`sort` to fold over
+them), not a redesign — the single-condition version was chosen to be a
+strict subset of that shape, not a dead end.

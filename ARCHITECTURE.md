@@ -171,3 +171,28 @@ gained `observeRecentPages`/`updateIcon`/`updateCoverColor`/`deletePage`
 for the recent-pages query); `BlockRepository` gained `updateType` (the
 "/" command's effect — change an existing block's type in place, distinct
 from `createBlock` which only ever appends a new one).
+
+## New Phase 4 — native databases (post-retrofit)
+
+The fidelity requirement's replacement 15-phase plan named this the next
+phase after the retrofit landed (see `docs/FIDELITY.md`§Status). Same
+per-layer pattern as every prior data-owning phase: `core:model` (`Collection`,
+`CollectionProperty`, `CollectionPropertyOption`, `CollectionEntry`,
+`CollectionView` + two enums), `core:database` (5 entities, 4 DAOs, a
+mapper file, `CollectionRepositoryImpl`), `core:domain`
+(`CollectionRepository`, 19 use cases, and one pure standalone piece —
+`CollectionViewEngine`, deliberately independent of Room/Flow so it's cheap
+to unit test and reusable across the Table/List/Kanban composables),
+`core:testing` (`FakeCollectionRepository`). The one architectural
+departure from that pattern: a collection entry is not a new kind of
+persisted "thing" — it's an existing `Page` with `collectionId` set (see
+`docs/DECISIONS.md`), so `feature:editor`'s `PageDetailScreen` gained a
+`PropertyValueRow` section instead of a new screen, and navigating to an
+entry is exactly `AppRoute.PageDetail`, not a new route.
+
+`feature:spaces` gained `CollectionDetailScreen` (the collection's own
+screen — a `TabRow` of views, `when(activeView.type)` dispatch to
+`CollectionTableView`/`CollectionListView`/`CollectionKanbanView`, sheets
+for property management/view creation/view configuration) plus a
+"Bases de données" section and creation flow on `SpaceDetailScreen`,
+alongside the existing "Pages" section.

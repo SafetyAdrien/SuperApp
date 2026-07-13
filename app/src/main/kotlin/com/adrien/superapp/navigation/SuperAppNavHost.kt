@@ -12,6 +12,7 @@ import com.adrien.superapp.feature.home.PostDetailScreen
 import com.adrien.superapp.feature.messages.MessagesScreen
 import com.adrien.superapp.feature.profile.ProfileScreen
 import com.adrien.superapp.feature.settings.SettingsScreen
+import com.adrien.superapp.feature.spaces.CollectionDetailScreen
 import com.adrien.superapp.feature.spaces.CreateSpaceScreen
 import com.adrien.superapp.feature.spaces.SpaceDetailScreen
 import com.adrien.superapp.feature.spaces.SpacesScreen
@@ -55,10 +56,17 @@ fun SuperAppNavHost(
             SpaceDetailScreen(
                 onBackClick = { navController.popBackStack() },
                 onPageClick = { pageId -> navController.navigate(AppRoute.PageDetail(pageId)) },
+                onCollectionClick = { collectionId -> navController.navigate(AppRoute.CollectionDetail(collectionId)) },
             )
         }
         composable<AppRoute.PageDetail> {
             PageDetailScreen(onBackClick = { navController.popBackStack() })
+        }
+        composable<AppRoute.CollectionDetail> {
+            CollectionDetailScreen(
+                onBackClick = { navController.popBackStack() },
+                onEntryClick = { pageId -> navController.navigate(AppRoute.PageDetail(pageId)) },
+            )
         }
         composable<AppRoute.Messages> { MessagesScreen() }
         composable<AppRoute.Profile> {

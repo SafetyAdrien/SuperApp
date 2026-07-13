@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.room.Room
 import com.adrien.superapp.core.database.SuperAppDatabase
 import com.adrien.superapp.core.database.dao.BlockDao
+import com.adrien.superapp.core.database.dao.CollectionDao
+import com.adrien.superapp.core.database.dao.CollectionPropertyDao
+import com.adrien.superapp.core.database.dao.CollectionPropertyValueDao
+import com.adrien.superapp.core.database.dao.CollectionViewDao
 import com.adrien.superapp.core.database.dao.PageDao
 import com.adrien.superapp.core.database.dao.PostDao
 import com.adrien.superapp.core.database.dao.ProfileDao
@@ -44,4 +48,18 @@ object DatabaseModule {
 
     @Provides
     fun providesBlockDao(database: SuperAppDatabase): BlockDao = database.blockDao()
+
+    @Provides
+    fun providesCollectionDao(database: SuperAppDatabase): CollectionDao = database.collectionDao()
+
+    @Provides
+    fun providesCollectionPropertyDao(database: SuperAppDatabase): CollectionPropertyDao =
+        database.collectionPropertyDao()
+
+    @Provides
+    fun providesCollectionPropertyValueDao(database: SuperAppDatabase): CollectionPropertyValueDao =
+        database.collectionPropertyValueDao()
+
+    @Provides
+    fun providesCollectionViewDao(database: SuperAppDatabase): CollectionViewDao = database.collectionViewDao()
 }

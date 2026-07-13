@@ -12,7 +12,11 @@ class CreatePageUseCase @Inject constructor(
     private val pageRepository: PageRepository,
     private val profileRepository: ProfileRepository,
 ) {
-    suspend operator fun invoke(spaceId: String, title: String = "Page sans titre"): AppResult<Page> {
+    suspend operator fun invoke(
+        spaceId: String,
+        title: String = "Page sans titre",
+        collectionId: String? = null,
+    ): AppResult<Page> {
         val author = profileRepository.observeCurrentProfile().firstOrNull()
             ?: return AppResult.Failure(AppError.NotFound)
 
@@ -20,6 +24,7 @@ class CreatePageUseCase @Inject constructor(
             spaceId = spaceId,
             title = title.ifBlank { "Page sans titre" },
             createdBy = author.id,
+            collectionId = collectionId,
         )
     }
 }

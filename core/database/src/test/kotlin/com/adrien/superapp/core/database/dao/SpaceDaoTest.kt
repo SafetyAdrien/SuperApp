@@ -107,6 +107,7 @@ class SpaceDaoTest {
         icon = null,
         coverUrl = null,
         coverColorKey = null,
+        collectionId = null,
         createdBy = owner.id,
         createdAt = 0,
         updatedAt = 0,
