@@ -54,17 +54,29 @@ this session either — same "reviewed, not verified" caveat as everything
 else, now one layer more indirect (verified the *existence and intended
 effect* of the flag via official docs, not the actual resulting compile).
 
-**Update** — The opt-out worked: the next `./gradlew
-:build-logic:convention:compileKotlin` only had one error left, and it
-wasn't an AGP-9 DSL issue at all — `AndroidLibraryConventionPlugin.kt`'s
-`defaultConfig { targetSdk = 37 }` was simply invalid on a *library* module
-and always had been (confirmed via AGP 9.2's `LibraryDefaultConfig`
-reference page: zero `targetSdk` members, vs. `ApplicationDefaultConfig`'s
-eight — `targetSdk` is an install-time behavior flag, meaningless for an
-AAR). Removed; see the "Library modules don't set `targetSdk`" note in
-`AndroidLibraryConventionPlugin.kt` itself. This confirms the opt-out is
-doing its job — every remaining compile error from here on is a real,
-pre-existing bug in this repo's own code, not an AGP-9 DSL mismatch.
+**Update 1** — The next `./gradlew :build-logic:convention:compileKotlin`
+the user reported showed only one error left (`AndroidLibraryConventionPlugin.kt`'s
+`targetSdk`, unrelated to this ADR — a genuine pre-existing bug: library
+modules never had a `targetSdk` property at all, confirmed via AGP 9.2's
+`LibraryDefaultConfig` reference; fixed separately). That looked like
+confirmation the opt-out worked.
+
+**Update 2 — it didn't; corrected** — A subsequent full `./gradlew
+assembleDebug` from the user showed the *entire* `CommonExtension`
+cascade again, unchanged, even with the `targetSdk` fix in place. Root
+cause: `build-logic` is a separate composite/included build
+(`settings.gradle.kts`'s `includeBuild("build-logic")`), and Gradle does
+**not** propagate the root project's `gradle.properties` into an included
+build — each build (root or included) only reads its own
+(github.com/gradle/gradle/issues/2534). `build-logic` had no
+`gradle.properties` of its own, so `android.newDsl=false`/
+`android.builtInKotlin=false` were silently inert the entire time; the
+"only one error left" report was very likely the user looking at a
+truncated view (Android Studio's error panel, or a scrolled terminal) that
+only surfaced the newest/last error rather than the full unchanged
+cascade. Fixed by creating `build-logic/gradle.properties` with the same
+two properties — that's the file that actually needs them, since that's
+where `ConfigureKotlinAndroid.kt` et al. are compiled.
 
 ---
 

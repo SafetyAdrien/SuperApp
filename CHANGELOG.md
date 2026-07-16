@@ -5,6 +5,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — `android.newDsl=false` wasn't actually reaching `build-logic`
+
+A full `./gradlew assembleDebug` still failed with the *entire*
+`CommonExtension` DSL error cascade from before, unchanged, even after the
+`android.newDsl=false`/`android.builtInKotlin=false` fix and the
+`targetSdk` fix below. Root cause: `build-logic` is a separate
+composite/included build (`includeBuild("build-logic")`), and Gradle does
+not propagate the root project's `gradle.properties` into an included
+build — each build only reads its own, and `build-logic` had none. Added
+`build-logic/gradle.properties` with the same two properties. See
+`docs/DECISIONS.md`.
+
 ### Fixed — Library modules don't have `targetSdk`
 
 After the `android.newDsl=false` fix below, `./gradlew

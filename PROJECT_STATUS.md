@@ -561,9 +561,20 @@ its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
   ConfigureAndroidCompose,AndroidLibraryConventionPlugin,...}.kt` against the
   new (non-generic) `CommonExtension` and drop both properties — must happen
   before any future AGP 10.0 upgrade, since the opt-out won't exist anymore.
-  **Update**: confirmed working — the opt-out cleared every AGP-9-DSL-shaped
-  error; the one error left after it (`AndroidLibraryConventionPlugin.kt`'s
-  `targetSdk`) turned out to be unrelated, see next bullet.
+  **Update — the properties were never actually applying**: `build-logic`
+  is a separate composite/included build (`includeBuild("build-logic")` in
+  `settings.gradle.kts`), and Gradle does not propagate the root project's
+  `gradle.properties` into an included build — each build only reads its
+  own. `build-logic` had no `gradle.properties` of its own, so both flags
+  were silently inert. (A report of "only one error left" after this fix
+  looked like confirmation at the time, but was very likely a truncated
+  view — Android Studio's error panel or a scrolled terminal — of the same
+  unchanged full error cascade; a subsequent full `./gradlew assembleDebug`
+  showed every `CommonExtension` error still present, unchanged.) **Fixed
+  2026-07-16**: created `build-logic/gradle.properties` duplicating both
+  properties — that's the file that actually needs them, since that's
+  where `ConfigureKotlinAndroid.kt` et al. are compiled. Keep both
+  `gradle.properties` files in sync until the real DSL migration happens.
 - ~~`AndroidLibraryConventionPlugin.kt` set `targetSdk` on a library
   module~~ **Fixed 2026-07-13**: `./gradlew
   :build-logic:convention:compileKotlin` still failed after the
