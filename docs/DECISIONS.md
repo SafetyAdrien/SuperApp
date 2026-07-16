@@ -54,6 +54,18 @@ this session either — same "reviewed, not verified" caveat as everything
 else, now one layer more indirect (verified the *existence and intended
 effect* of the flag via official docs, not the actual resulting compile).
 
+**Update** — The opt-out worked: the next `./gradlew
+:build-logic:convention:compileKotlin` only had one error left, and it
+wasn't an AGP-9 DSL issue at all — `AndroidLibraryConventionPlugin.kt`'s
+`defaultConfig { targetSdk = 37 }` was simply invalid on a *library* module
+and always had been (confirmed via AGP 9.2's `LibraryDefaultConfig`
+reference page: zero `targetSdk` members, vs. `ApplicationDefaultConfig`'s
+eight — `targetSdk` is an install-time behavior flag, meaningless for an
+AAR). Removed; see the "Library modules don't set `targetSdk`" note in
+`AndroidLibraryConventionPlugin.kt` itself. This confirms the opt-out is
+doing its job — every remaining compile error from here on is a real,
+pre-existing bug in this repo's own code, not an AGP-9 DSL mismatch.
+
 ---
 
 ## KSP version fixed from a guessed `<kotlin>-<ksp>` string to the real, independently-versioned `2.3.10`

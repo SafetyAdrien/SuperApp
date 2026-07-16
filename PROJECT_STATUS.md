@@ -561,6 +561,20 @@ its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
   ConfigureAndroidCompose,AndroidLibraryConventionPlugin,...}.kt` against the
   new (non-generic) `CommonExtension` and drop both properties — must happen
   before any future AGP 10.0 upgrade, since the opt-out won't exist anymore.
+  **Update**: confirmed working — the opt-out cleared every AGP-9-DSL-shaped
+  error; the one error left after it (`AndroidLibraryConventionPlugin.kt`'s
+  `targetSdk`) turned out to be unrelated, see next bullet.
+- ~~`AndroidLibraryConventionPlugin.kt` set `targetSdk` on a library
+  module~~ **Fixed 2026-07-13**: `./gradlew
+  :build-logic:convention:compileKotlin` still failed after the
+  `android.newDsl=false` fix above, with exactly one error:
+  `defaultConfig { targetSdk = 37 }` unresolved. Not an AGP-9 DSL issue —
+  confirmed via AGP 9.2's `LibraryDefaultConfig` reference page that
+  library modules never had a `targetSdk` property at all (0 members vs.
+  `ApplicationDefaultConfig`'s 8) — `targetSdk` is an install-time behavior
+  flag meaningless for an AAR. This line was wrong since it was first
+  written (a copy-paste from `AndroidApplicationConventionPlugin.kt` that
+  was never caught because nothing had compiled yet). Removed.
 - ~~KSP version guess~~ **Fixed 2026-07-13**: the user's local
   `./gradlew assembleDebug` failed with "Plugin ... 2.3.10-2.0.4 ... was
   not found" — this session's Bash tool turned out to have real network

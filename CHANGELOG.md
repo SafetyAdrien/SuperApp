@@ -5,6 +5,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed — Library modules don't have `targetSdk`
+
+After the `android.newDsl=false` fix below, `./gradlew
+:build-logic:convention:compileKotlin` still failed with one error:
+`AndroidLibraryConventionPlugin.kt`'s `defaultConfig { targetSdk = 37 }`.
+Not an AGP-9 regression — `LibraryDefaultConfig` never had a `targetSdk`
+property (confirmed against AGP 9.2's reference docs: 0 members, vs.
+`ApplicationDefaultConfig`'s 8); it's an install-time behavior flag that
+only makes sense for an installable app, not a library AAR. This line was
+wrong since it was first written and only surfaced now that the module
+actually compiles far enough to reach it. Removed.
+
 ### Fixed — `build-logic/convention` doesn't compile against AGP 9's DSL
 
 `./gradlew assembleDebug` failed at `:build-logic:convention:compileKotlin`

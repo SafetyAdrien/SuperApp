@@ -13,9 +13,9 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
 
-                defaultConfig {
-                    targetSdk = 37
-                }
+                // No targetSdk here: LibraryDefaultConfig doesn't declare one — targetSdk is an
+                // install-time behavior flag that only makes sense for an installable APK, not an
+                // AAR. Only the app module's defaultConfig sets it (AndroidApplicationConventionPlugin.kt).
 
                 testOptions {
                     unitTests.isIncludeAndroidResources = true
