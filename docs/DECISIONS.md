@@ -4,7 +4,59 @@ Short ADRs. Newest first.
 
 ---
 
-## Temporary `android.newDsl=false` / `android.builtInKotlin=false` opt-out for AGP 9's DSL
+## Rewrote `configureKotlinAndroid`/`configureAndroidCompose` against AGP 9.2's real `CommonExtension`
+
+**Contexte** — See the superseded ADR below: the `android.newDsl=false`
+opt-out could never have fixed `build-logic/convention`'s compile errors,
+because it's a runtime property and the errors are Kotlin compile-time
+type errors against the `CommonExtension.class` shape already fixed
+inside the published `com.android.tools.build:gradle:9.2.0` jar. The only
+real fix is rewriting the source to match that actual shape.
+
+**Décision** — In `ConfigureKotlinAndroid.kt`/`ConfigureAndroidCompose.kt`:
+`CommonExtension<*, *, *, *, *, *>` → `CommonExtension` (no type
+parameters — confirmed via AGP 9.0's release notes); every nested
+DSL object (`defaultConfig`, `compileOptions`, `lint`, `buildFeatures`) is
+now configured via `commonExtension.defaultConfig.apply { ... }` instead
+of the old `commonExtension.defaultConfig { ... }` trailing-lambda call —
+confirmed via AGP 9.2's own API reference (`CommonExtension#defaultConfig()`
+exists as a property getter; no `defaultConfig(kotlin.Function1)`
+trailing-lambda overload exists on `CommonExtension` in 9.2, unlike
+`compileSdk` which kept both forms). `minSdk`/`compileSdk` stay simple
+property assignment (`minSdk = 31`) — confirmed still valid via AGP 9.2's
+docs text ("`android` block: `compileSdk = 26`") and via the fact that only
+the old *function-call* spellings (`minSdkVersion(Int)`, `compileSdkVersion(Int)`)
+are deprecated, not the property-assignment spelling.
+`AndroidApplicationConventionPlugin.kt`/`AndroidLibraryConventionPlugin.kt`
+themselves are untouched: they configure the *concrete*
+`ApplicationExtension`/`LibraryExtension` types directly (not the shared
+`CommonExtension`), and AGP 9.0's release notes are explicit that the
+trailing-lambda block methods *moved onto* those concrete types rather
+than being removed — confirmed via a real code example in JetBrains'
+AGP-9-migration skill doc showing `defaultConfig { ... }`/
+`buildFeatures { ... }` still valid inside a concrete `android {}` block.
+
+**Raisons** — This is the actual, permanent fix (not a temporary opt-out
+with an AGP-10.0 expiration date) and required no more research than the
+abandoned `android.newDsl=false` approach already did — the same official
+sources (AGP 9.0 release notes, AGP 9.2 API reference, JetBrains'
+migration skill doc) that named the opt-out also documented the real
+target shape.
+
+**Conséquences** — `build-logic/convention` now matches AGP 9.2's actual
+published API. Still "reviewed, not verified" — this sandbox still cannot
+resolve `dl.google.com` to run `com.android.tools.build:gradle:9.2.0`
+itself and compile-check this rewrite; the confidence here comes from
+cross-referencing AGP's official release notes against its own generated
+API reference pages (both reachable), not from an actual compiler. If any
+individual property (`minSdk`'s exact mutability, `lint`'s exact member
+set) turns out subtly wrong, it'll now surface as an isolated,
+easy-to-diagnose error rather than the wall of cascading errors caused by
+the CommonExtension generics mismatch.
+
+---
+
+## Temporary `android.newDsl=false` / `android.builtInKotlin=false` opt-out for AGP 9's DSL — SUPERSEDED, see ADR above
 
 **Contexte** — After the KSP fix, the user's next local `./gradlew
 assembleDebug` failed at `:build-logic:convention:compileKotlin` with ~18
@@ -61,22 +113,40 @@ modules never had a `targetSdk` property at all, confirmed via AGP 9.2's
 `LibraryDefaultConfig` reference; fixed separately). That looked like
 confirmation the opt-out worked.
 
-**Update 2 — it didn't; corrected** — A subsequent full `./gradlew
-assembleDebug` from the user showed the *entire* `CommonExtension`
-cascade again, unchanged, even with the `targetSdk` fix in place. Root
-cause: `build-logic` is a separate composite/included build
-(`settings.gradle.kts`'s `includeBuild("build-logic")`), and Gradle does
-**not** propagate the root project's `gradle.properties` into an included
-build — each build (root or included) only reads its own
-(github.com/gradle/gradle/issues/2534). `build-logic` had no
-`gradle.properties` of its own, so `android.newDsl=false`/
-`android.builtInKotlin=false` were silently inert the entire time; the
-"only one error left" report was very likely the user looking at a
-truncated view (Android Studio's error panel, or a scrolled terminal) that
-only surfaced the newest/last error rather than the full unchanged
-cascade. Fixed by creating `build-logic/gradle.properties` with the same
-two properties — that's the file that actually needs them, since that's
-where `ConfigureKotlinAndroid.kt` et al. are compiled.
+**Update 2** — A subsequent full `./gradlew assembleDebug` from the user
+showed the *entire* `CommonExtension` cascade again, unchanged, even with
+the `targetSdk` fix in place. Root cause: `build-logic` is a separate
+composite/included build (`settings.gradle.kts`'s
+`includeBuild("build-logic")`), and Gradle does **not** propagate the root
+project's `gradle.properties` into an included build — each build (root or
+included) only reads its own (github.com/gradle/gradle/issues/2534).
+`build-logic` had no `gradle.properties` of its own, so
+`android.newDsl=false`/`android.builtInKotlin=false` were silently inert
+the entire time; the "only one error left" report was very likely the user
+looking at a truncated view (Android Studio's error panel, or a scrolled
+terminal) that only surfaced the newest/last error rather than the full
+unchanged cascade. Fixed by creating `build-logic/gradle.properties`
+duplicating both properties.
+
+**Update 3 — `android.newDsl=false` was never going to work here, full
+stop; superseded** — Android Studio then showed the exact same 18-error
+cascade a *third* time, from the correct file this time
+(`build-logic/gradle.properties` in place, confirmed). The theory behind
+this whole ADR was wrong at its foundation: `android.newDsl` is a
+*runtime* Gradle property, read at configuration/execution time. But
+`build-logic/convention`'s `compileKotlin` task fails at **Kotlin compile
+time**, type-checking source against the `CommonExtension.class` bytecode
+already baked into the `com.android.tools.build:gradle:9.2.0` jar on its
+classpath — a shape fixed forever when that jar was published. No runtime
+property, read long after the Kotlin compiler has already finished
+type-checking, can retroactively make a published, non-generic interface
+generic again. This was a fundamental category error: treating a
+compile-time source-compatibility break as if it were a runtime behavior
+toggle. **Both `android.newDsl` properties were removed** (from both
+`gradle.properties` files) and replaced with the real fix — see the newer
+ADR above. `android.builtInKotlin=false` was kept in both files; that one
+*is* a genuine runtime concern (which Kotlin-compilation path AGP invokes)
+unrelated to this specific mistake.
 
 ---
 

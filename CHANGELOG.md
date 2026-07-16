@@ -5,17 +5,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Fixed — `android.newDsl=false` wasn't actually reaching `build-logic`
+### Fixed — `build-logic/convention` rewritten against AGP 9.2's real DSL
 
-A full `./gradlew assembleDebug` still failed with the *entire*
-`CommonExtension` DSL error cascade from before, unchanged, even after the
-`android.newDsl=false`/`android.builtInKotlin=false` fix and the
-`targetSdk` fix below. Root cause: `build-logic` is a separate
-composite/included build (`includeBuild("build-logic")`), and Gradle does
-not propagate the root project's `gradle.properties` into an included
-build — each build only reads its own, and `build-logic` had none. Added
-`build-logic/gradle.properties` with the same two properties. See
-`docs/DECISIONS.md`.
+Two earlier attempts at this ("duplicate `android.newDsl=false` into
+`build-logic/gradle.properties`") didn't work: `android.newDsl` is a
+*runtime* Gradle property, but the `CommonExtension` generics error is a
+**Kotlin compile-time** type error against the `CommonExtension.class`
+shape already fixed inside the published `com.android.tools.build:gradle:9.2.0`
+jar — no runtime flag can retroactively change a published interface's
+compiled shape. Both `android.newDsl=false` properties removed; the real
+fix is rewriting `ConfigureKotlinAndroid.kt`/`ConfigureAndroidCompose.kt`
+against AGP 9.2's actual (non-generic) `CommonExtension`, using
+`defaultConfig.apply { }` instead of the old `defaultConfig { }`
+trailing-lambda call — confirmed member-by-member against AGP 9.2's own
+generated API reference. `android.builtInKotlin=false` stays (a separate,
+genuine runtime concern). Full account of both dead ends, kept as a
+caution against repeating them, in `docs/DECISIONS.md`.
 
 ### Fixed — Library modules don't have `targetSdk`
 

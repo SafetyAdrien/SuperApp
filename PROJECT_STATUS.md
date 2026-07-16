@@ -542,39 +542,38 @@ its anchor `IconButton` in `PageDetailScreen`'s top-bar `actions` slot
 
 ## Dette technique
 
-- **`build-logic/convention` targets AGP 9's pre-9.0 DSL shape, opted out via
-  `android.newDsl=false`/`android.builtInKotlin=false` (2026-07-13, temporary
-  — removed in AGP 10.0)**: after the KSP fix, the next local
-  `./gradlew assembleDebug` failed at `:build-logic:convention:compileKotlin`
-  with `CommonExtension<*, *, *, *, *, *>` — "No type arguments expected" —
+- ~~`build-logic/convention` targets AGP 9's pre-9.0 DSL shape~~ **Fixed
+  2026-07-16, properly this time**: after the KSP fix, `./gradlew
+  assembleDebug` failed at `:build-logic:convention:compileKotlin` with
+  `CommonExtension<*, *, *, *, *, *>` — "No type arguments expected" —
   plus a cascade of unresolved `compileSdk`/`defaultConfig`/`minSdk`/
-  `compileOptions`/`lint`/`buildFeatures`/`compose`/`targetSdk` references.
-  AGP 9.0 removed `CommonExtension`'s 6 generic type parameters and moved
-  several block-lambda DSL functions off it onto the concrete
-  `ApplicationExtension`/`LibraryExtension` types. Confirmed via
-  `developer.android.com`'s AGP 9.0 release notes and JetBrains'
-  `kotlin-agent-skills` AGP-9-migration skill (both reachable this session)
-  that `android.newDsl=false` is Google's own documented temporary opt-out
-  for exactly this — see `docs/DECISIONS.md`. **Real follow-up work**: once
-  a networked environment can actually compile against AGP 9.2's DSL,
-  rewrite `build-logic/convention/src/main/kotlin/{ConfigureKotlinAndroid,
-  ConfigureAndroidCompose,AndroidLibraryConventionPlugin,...}.kt` against the
-  new (non-generic) `CommonExtension` and drop both properties — must happen
-  before any future AGP 10.0 upgrade, since the opt-out won't exist anymore.
-  **Update — the properties were never actually applying**: `build-logic`
-  is a separate composite/included build (`includeBuild("build-logic")` in
-  `settings.gradle.kts`), and Gradle does not propagate the root project's
-  `gradle.properties` into an included build — each build only reads its
-  own. `build-logic` had no `gradle.properties` of its own, so both flags
-  were silently inert. (A report of "only one error left" after this fix
-  looked like confirmation at the time, but was very likely a truncated
-  view — Android Studio's error panel or a scrolled terminal — of the same
-  unchanged full error cascade; a subsequent full `./gradlew assembleDebug`
-  showed every `CommonExtension` error still present, unchanged.) **Fixed
-  2026-07-16**: created `build-logic/gradle.properties` duplicating both
-  properties — that's the file that actually needs them, since that's
-  where `ConfigureKotlinAndroid.kt` et al. are compiled. Keep both
-  `gradle.properties` files in sync until the real DSL migration happens.
+  `compileOptions`/`lint`/`buildFeatures`/`compose` references (AGP 9.0
+  removed `CommonExtension`'s 6 generic type parameters and moved several
+  block-lambda DSL functions off it onto the concrete
+  `ApplicationExtension`/`LibraryExtension` types). Two dead-end attempts
+  before the real fix, both fully written up in `docs/DECISIONS.md`
+  ("SUPERSEDED" ADR) as a caution against repeating them: (1) set
+  `android.newDsl=false`/`android.builtInKotlin=false` in the root
+  `gradle.properties` — didn't apply at all, since `build-logic` is a
+  separate composite/included build that doesn't inherit the root's
+  `gradle.properties`; (2) duplicated those properties into a new
+  `build-logic/gradle.properties` — this time they *did* apply, but still
+  didn't fix anything, because `android.newDsl` is a **runtime** property
+  and the errors are **Kotlin compile-time** type errors against the
+  `CommonExtension.class` shape already fixed inside the published AGP
+  9.2.0 jar — no runtime flag can retroactively un-remove a published
+  interface's generic type parameters. **Real fix**: rewrote
+  `ConfigureKotlinAndroid.kt`/`ConfigureAndroidCompose.kt` against AGP
+  9.2's actual `CommonExtension` (no generics; `defaultConfig.apply { }`
+  instead of `defaultConfig { }`, etc. — confirmed via AGP's own generated
+  API reference for 9.2, not just release notes prose this time). Removed
+  both now-pointless `android.newDsl=false` properties;
+  `android.builtInKotlin=false` stays (unrelated, genuine runtime
+  concern). `AndroidApplicationConventionPlugin.kt`/
+  `AndroidLibraryConventionPlugin.kt` needed no changes — they configure
+  the concrete `ApplicationExtension`/`LibraryExtension` types directly,
+  and those kept their trailing-lambda block methods (AGP 9.0 moved block
+  methods *onto* the concrete types, not off them).
 - ~~`AndroidLibraryConventionPlugin.kt` set `targetSdk` on a library
   module~~ **Fixed 2026-07-13**: `./gradlew
   :build-logic:convention:compileKotlin` still failed after the

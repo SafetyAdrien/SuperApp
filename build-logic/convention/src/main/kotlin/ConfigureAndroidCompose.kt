@@ -2,13 +2,18 @@ import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
 
-/** Applies the Compose compiler plugin and shared Compose dependencies to an Android module. */
+/**
+ * Applies the Compose compiler plugin and shared Compose dependencies to an Android module.
+ *
+ * `buildFeatures{}` is a property getter on AGP 9's `CommonExtension`, not a trailing-lambda
+ * function — see the comment on `configureKotlinAndroid`.
+ */
 internal fun Project.configureAndroidCompose(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    commonExtension: CommonExtension,
 ) {
     pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
 
-    commonExtension.buildFeatures {
+    commonExtension.buildFeatures.apply {
         compose = true
     }
 
